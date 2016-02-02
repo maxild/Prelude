@@ -39,7 +39,7 @@ if (-not $BuildNumber) {
 }
 Trace-Log "Build #$BuildNumber started at $startTime"
 
-pushd $RepoRoot
+Push-Location $RepoRoot
 
 $BuildErrors = @()
 Invoke-BuildStep 'Cleaning artifacts' { Clear-Artifacts } `
@@ -76,7 +76,7 @@ Invoke-BuildStep 'Running tests' {
     -skip:$SkipTests `
     -ev +BuildErrors
 
-popd
+Pop-Location
 
 # Write epilogue
 Trace-Log ('-' * 60)

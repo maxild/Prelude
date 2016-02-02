@@ -235,6 +235,15 @@ Function Resolve-DnxVersion {
     }
 }
 
+# Get the sdk version from global.json
+# TODO: should allow empty to be default alias
+Function Get-DnxVersion
+{
+    $globalJson = join-path $PSScriptRoot "global.json"
+    $jsonData = Get-Content -Path $globalJson -Raw | ConvertFrom-JSON
+    return $jsonData.sdk.version
+}
+
 # Local builds will generate a build number based on the 'duration' since semantic version date
 Function Get-BuildNumber() {
     $SemanticVersionDate = '2015-11-30'
