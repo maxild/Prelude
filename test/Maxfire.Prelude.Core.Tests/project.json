@@ -8,7 +8,7 @@
     "dependencies": {
         "xunit": "2.1.0",
         "xunit.runner.dnx": "2.1.0-rc2-*",
-        "FluentAssertions": "4.0.1",
+        "FluentAssertions": "4.2.1",
         "Maxfire.Prelude.Core": ""
     },
     "commands": {
