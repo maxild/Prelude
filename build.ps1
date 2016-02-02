@@ -11,8 +11,8 @@
 param (
     [ValidateSet("debug", "release")]
     [string]$Configuration = 'debug',
-    [ValidateSet("Release","rtm", "rc", "beta", "local")]
-    [string]$ReleaseLabel = 'local',
+    [ValidateSet("Release", "alpha", "beta", "build", "local")]
+    [string]$BuildLabel = 'local',
     [int]$BuildNumber,
     [switch]$SkipRestore,
     [switch]$CleanCache,
@@ -44,6 +44,9 @@ $BuildErrors = @()
 Invoke-BuildStep 'Cleaning artifacts' { Clear-Artifacts } `
     -ev +BuildErrors
 
+Invoke-BuildStep 'Cleaning nupkgs' { Clear-Nupkgs } `
+    -ev +BuildErrors
+
 Invoke-BuildStep 'Cleaning package cache' { Clear-PackageCache } `
     -skip:(-not $CleanCache) `
     -ev +BuildErrors
@@ -56,11 +59,11 @@ Invoke-BuildStep 'Installing DNX runtimes' `
     -ev +BuildErrors
 
 Invoke-BuildStep 'Building projects' {
-        param($Configuration, $ReleaseLabel, $BuildNumber, $SkipRestore)
+        param($Configuration, $BuildLabel, $BuildNumber, $SkipRestore)
         # This will build and package all projects under the ./src folder
-        Build-Projects $Configuration $ReleaseLabel $BuildNumber -SkipRestore:$SkipRestore
+        Build-Projects $Configuration $BuildLabel $BuildNumber -SkipRestore:$SkipRestore
     } `
-    -args $Configuration, $ReleaseLabel, $BuildNumber, $SkipRestore `
+    -args $Configuration, $BuildLabel, $BuildNumber, $SkipRestore `
     -ev +BuildErrors
 
 Invoke-BuildStep 'Running tests' {
