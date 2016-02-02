@@ -1,10 +1,17 @@
 {
-    "version": "1.0.0-alpha-*",
-    "description": "Maxfire Prelude Core Lib",
-    "authors": [ "Maxild" ],
-    "tags": [ "maxfire" ],
-    "projectUrl": "",
-    "licenseUrl": "",
+    "description": "The core library of Maxfire.Prelude. The library contains extensions to .NET BCL that can be used when running on .NET Framework 4.x or .NET Core 1.0.",
+    "version": "1.0.0-*",
+    "authors": [ "Morten Maxild" ],
+    "owners": [ "Morten Maxild" ],
+    "tags": [ "prelude" ],
+    "releaseNotes": "CoreCLR support (rc2)",
+    "copyright": "Copyright © Morten Maxild 2016",
+    "licenseUrl": "http://www.apache.org/licenses/LICENSE-2.0",
+    "projectUrl": "https://github.com/maxild/Prelude/",
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/maxild/Prelude"
+    },
     "compilationOptions": {
         "warningsAsErrors": true
     },
