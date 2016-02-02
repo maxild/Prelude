@@ -17,52 +17,11 @@ packages/
 *.user
 *.sln.docstates
 
-.nuget/
-
 # Build results
-
 [Dd]ebug/
 [Rr]elease/
-x64/
-build/
 [Bb]in/
 [Oo]bj/
-
-# MSTest test Results
-[Tt]est[Rr]esult*/
-[Bb]uild[Ll]og.*
-
-*_i.c
-*_p.c
-*.ilk
-*.meta
-*.obj
-*.pch
-*.pdb
-*.pgc
-*.pgd
-*.rsp
-*.sbr
-*.tlb
-*.tli
-*.tlh
-*.tmp
-*.tmp_proj
-*.log
-*.vspscc
-*.vssscc
-.builds
-*.pidb
-*.log
-*.scc
-
-# Visual C++ cache files
-ipch/
-*.aps
-*.ncb
-*.opensdf
-*.sdf
-*.cachefile
 
 # Visual Studio profiler
 *.psess
@@ -81,13 +40,6 @@ _TeamCity*
 
 # DotCover is a Code Coverage Tool
 *.dotCover
-
-# NCrunch
-*.ncrunch*
-.*crunch*.local.xml
-
-# Installshield output folder
-[Ee]xpress/
 
 # Publish Web Output
 *.Publish.xml
