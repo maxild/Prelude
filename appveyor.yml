@@ -1,7 +1,7 @@
 init:
   - git config --global core.autocrlf true
 build_script:
-  - ps: .\build.ps1 -Configuration Release -BuildLabel build -BuildNumber {build}
+  - ps: .\build.ps1 -Configuration Release -BuildLabel build -BuildNumber $env:APPVEYOR_BUILD_NUMBER -CommitId $env:APPVEYOR_REPO_COMMIT
 clone_depth: 1
 test: off
 deploy: off

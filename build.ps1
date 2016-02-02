@@ -14,6 +14,7 @@ param (
     [ValidateSet("Release", "alpha", "beta", "build", "local")]
     [string]$BuildLabel = 'local',
     [int]$BuildNumber,
+    [string]$CommitId = "0000000000000000000000000000000000000000",
     [switch]$SkipRestore,
     [switch]$CleanCache,
     [switch]$SkipTests
