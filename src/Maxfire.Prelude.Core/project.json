@@ -8,10 +8,6 @@
     "copyright": "Copyright © Morten Maxild 2016",
     "licenseUrl": "http://www.apache.org/licenses/LICENSE-2.0",
     "projectUrl": "https://github.com/maxild/Prelude/",
-    "repository": {
-        "type": "git",
-        "url": "git://github.com/maxild/Prelude"
-    },
     "compilationOptions": {
         "warningsAsErrors": true
     },
