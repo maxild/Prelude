@@ -15,5 +15,5 @@ deploy:
   api_key:
     secure: EOVLFyiHRhh9Jij3/mITdSV5JH1SzT8JUbqqTIFtvOPndNeMme3mME01ws3+5nFB
   skip_symbols: true
-  #artifact: /.*\.nupkg/ # upload all NuGet packages to myget ci-feed (regexp or comma-delimited list)
-  artifact: artifacts\*\Release\*.nupkg # *.symbols.nupkg should not be deployed to myget
+  artifact: /.*\.nupkg/ # upload all NuGet packages to myget ci-feed (regexp or comma-delimited list)
+  #artifact: artifacts\*\Release\*.nupkg # *.symbols.nupkg should not be deployed to myget
