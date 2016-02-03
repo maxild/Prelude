@@ -45,9 +45,6 @@ $BuildErrors = @()
 Invoke-BuildStep 'Cleaning artifacts' { Clear-Artifacts } `
     -ev +BuildErrors
 
-Invoke-BuildStep 'Cleaning nupkgs' { Clear-Nupkgs } `
-    -ev +BuildErrors
-
 Invoke-BuildStep 'Cleaning package cache' { Clear-PackageCache } `
     -skip:(-not $CleanCache) `
     -ev +BuildErrors

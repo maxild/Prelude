@@ -1,7 +1,21 @@
 init:
   - git config --global core.autocrlf true
+
+configuration: Release
+
 build_script:
-  - ps: .\build.ps1 -Configuration Release -BuildLabel build -BuildNumber $env:APPVEYOR_BUILD_NUMBER -CommitId $env:APPVEYOR_REPO_COMMIT
+  - ps: .\build.ps1 -Configuration $(configuration) -BuildLabel build -BuildNumber $env:APPVEYOR_BUILD_NUMBER -CommitId $env:APPVEYOR_REPO_COMMIT
+
+# Do not clone entire repo/history. Instead limit the number of last commits to one.
 clone_depth: 1
+
 test: off
-deploy: off
+
+deploy:
+  provider: NuGet
+  server: https://www.myget.org/F/maxfire-prelude/api/v3/index.json
+  api_key:
+    secure: EOVLFyiHRhh9Jij3/mITdSV5JH1SzT8JUbqqTIFtvOPndNeMme3mME01ws3+5nFB
+  skip_symbols: true
+  #artifact: /.*\.nupkg/ # upload all NuGet packages to myget ci-feed (regexp or comma-delimited list)
+  artifact: artifacts\*\$(configuration)\*.nupkg # *.symbols.nupkg should not be deployed to myget

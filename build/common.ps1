@@ -42,7 +42,6 @@ $DnvmCmd = Join-Path $env:USERPROFILE '.dnx\bin\dnvm.cmd'
 
 $RepoRoot = Get-DirName $PSScriptRoot
 $NuGetExe = Join-Path $RepoRoot '.nuget\nuget.exe'
-$NupkgsFolder = Join-Path $RepoRoot 'nupkgs'
 $ArtifactsFolder = Join-Path $RepoRoot artifacts
 
 # TODO: We probably don't need <add key="BuildFeed" value="Nupkgs" /> in our
@@ -265,16 +264,6 @@ Function Clear-Artifacts {
     }
 }
 
-# Remove all content inside ./nupkgs folder
-Function Clear-Nupkgs {
-    [CmdletBinding()]
-    param()
-    if (Test-Dir $NupkgsFolder) {
-        Trace-Log 'Cleaning the Nupkgs folder'
-        Remove-Item $NupkgsFolder\* -Recurse -Force
-    }
-}
-
 # Clean the machine level cache from all packages (better to be safe than sorry)
 #          * Note: It is possible to run DNU with --no-cache switch
 #          * Note: DNU clear-http-cache command will clear the package cache
@@ -443,14 +432,9 @@ Function Build-Projects {
         Restore-Projects $projectsLocation
     }
 
-    # dnu pack will build all nupkgs
+    # dnu pack will build all nupkgs and place them in ./artifacts folder
     $projects = Find-Projects $projectsLocation
     $projects | Invoke-DnuPack -config $Configuration -label $BuildLabel -build $BuildNumber -out $ArtifactsFolder
-
-    # Moving all nupkgs
-    Trace-Log "Moving the packages to $NupkgsFolder"
-    if (-not (Test-Dir $NupkgsFolder)) { Create-Dir $NupkgsFolder }
-    Get-ChildItem "$ArtifactsFolder\*.nupkg" -Recurse | % { Move-Item $_ $NupkgsFolder -Force }
 }
 
 Function Test-Projects {
