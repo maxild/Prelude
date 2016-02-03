@@ -15,7 +15,7 @@ artifacts:
 
 deploy:
 - provider: NuGet
-  server: https://www.myget.org/F/maxfire-prelude/api/v3/index.json
+  server: https://www.myget.org/F/maxfire-prelude/api/v2/package
   api_key:
     secure: EOVLFyiHRhh9Jij3/mITdSV5JH1SzT8JUbqqTIFtvOPndNeMme3mME01ws3+5nFB
   skip_symbols: true
