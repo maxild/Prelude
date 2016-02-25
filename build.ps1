@@ -10,9 +10,13 @@
 [CmdletBinding()]
 param (
     [ValidateSet("debug", "release")]
+    [Alias('config')]
     [string]$Configuration = 'debug',
     [ValidateSet("Release", "alpha", "beta", "build", "local")]
+    [Alias('label')]
     [string]$BuildLabel = 'local',
+    [ValidateRange(1,9999)]
+    [Alias('build')]
     [int]$BuildNumber,
     [string]$CommitId = "0000000000000000000000000000000000000000",
     [switch]$SkipRestore,
