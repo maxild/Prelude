@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -262,27 +263,35 @@ namespace Maxfire.Prelude
 		}
 
 		public string ToString(string format, IFormatProvider formatProvider)
-		{
-		    var fmt = formatProvider?.GetFormat(GetType()) as ICustomFormatter;
-		    if (fmt != null)
-		    {
-		        return fmt.Format(format, this, formatProvider);
-		    }
+        {
+            if (formatProvider != null)
+            {
+                var fmt = formatProvider.GetFormat(GetType()) as ICustomFormatter;
+                if (fmt != null)
+                {
+                    return fmt.Format(format, this, formatProvider);
+                }
+            }
 
-		    format = format ?? "G";
+            string formatToUse = (format ?? "G").ToUpperInvariant();
 
-			switch (format.ToUpperInvariant())
-			{
-				case "V":
-					return Value.ToString();
-				case "T":
-					return Text;
-				case "G":
-					return ToString();
-				default:
-					throw new FormatException($"Unsupported format '{format}'");
-			}
-		}
+            return ToStringHelper(formatToUse);
+        }
+
+        protected virtual string ToStringHelper(string format)
+        {
+            switch (format)
+            {
+                case "V":
+                    return Value.ToString(CultureInfo.InvariantCulture);
+                case "T":
+                    return Text;
+                case "G":
+                    return ToString();
+                default:
+                    throw new FormatException($"Unsupported format '{format}'");
+            }
+        }
 
         TypeCode IConvertible.GetTypeCode()
         {
