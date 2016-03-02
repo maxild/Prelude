@@ -223,9 +223,16 @@ Function Resolve-DnxVersion {
         [Alias('u')]
         [switch]$Unstable
     )
+    # user defined SDK version
     if ($Version) {
         return $Version
     }
+    # global.json defined SDK version
+    $globalDnxVersion = Get-DnxVersion
+    if ($globalDnxVersion) {
+        return $globalDnxVersion
+    }
+    # Fallback versions defined as global variables (we do not use 'default' version defined by DNVM)
     if ($Unstable) {
         $DefaultUnstableDnxVersion
     }
@@ -238,7 +245,8 @@ Function Resolve-DnxVersion {
 # TODO: should allow empty to be default alias
 Function Get-DnxVersion
 {
-    $globalJson = join-path $PSScriptRoot "global.json"
+    $repoRoot = Split-Path -Path $PSScriptRoot -Parent
+    $globalJson = join-path $repoRoot "global.json"
     $jsonData = Get-Content -Path $globalJson -Raw | ConvertFrom-JSON
     return $jsonData.sdk.version
 }
@@ -271,39 +279,47 @@ Function Clear-PackageCache {
     [CmdletBinding()]
     param()
 
-    Trace-Log 'Removing .DNX packages'
+    Trace-Log 'Removing DNX packages (~\.dnx\packages)'
+
+    # Note: 'Remove-Item -Recurse -Force' sometimes errors,
+    #       therefore we use 'cmd.exe /c RMDIR /S /Q' (DOS command)
 
     # wipe out ~\.dnx\packages
     if (Test-Dir $env:userprofile\.dnx\packages) {
-        rm -r $env:userprofile\.dnx\packages -Force
+        #rm -r $env:userprofile\.dnx\packages -Force
+        &cmd.exe /C 'RMDIR /S /Q "%USERPROFILE%\.dnx\packages"'
     }
 
-    Trace-Log 'Removing .NUGET packages'
+    Trace-Log 'Removing NuGet packages (~\.nuget\packages)'
 
     # wipe out ~\.nuget\packages
     if (Test-Dir $env:userprofile\.nuget\packages) {
-        rm -r $env:userprofile\.nuget\packages -Force
+        #rm -r $env:userprofile\.nuget\packages -Force
+        &cmd.exe /C 'RMDIR /S /Q "%USERPROFILE%\.nuget\packages"'
     }
 
-    Trace-Log 'Removing DNU cache'
+    Trace-Log 'Removing DNU cache (~\AppData\Local\dnu\cache)'
 
     # wipe out ~\AppData\Local\dnu\cache (sometimes it can get corrupted)
     if (Test-Dir $env:localappdata\dnu\cache) {
-        rm -r $env:localappdata\dnu\cache -Force
+        #rm -r $env:localappdata\dnu\cache -Force
+        &cmd.exe /C 'RMDIR /S /Q "%LOCALAPPDATA%\dnu\cache"'
     }
 
-    Trace-Log 'Removing NuGet web cache'
+    Trace-Log 'Removing NuGet web cache (~\AppData\Local\NuGet\v3-cache)'
 
     # wipe out ~\AppData\Local\NuGet\v3-cache (sometimes it can get corrupted)
     if (Test-Dir $env:localappdata\NuGet\v3-cache) {
-        rm -r $env:localappdata\NuGet\v3-cache -Force
+        #rm -r $env:localappdata\NuGet\v3-cache -Force
+        &cmd.exe /C 'RMDIR /S /Q "%LOCALAPPDATA%\NuGet\v3-cache"'
     }
 
-    Trace-Log 'Removing NuGet machine cache'
+    Trace-Log 'Removing NuGet machine cache (~\AppData\Local\NuGet\Cache)'
 
     # wipe out ~\AppData\Local\NuGet\Cache (a lot of nupkg files)
     if (Test-Dir $env:localappdata\NuGet\Cache) {
-        rm -r $env:localappdata\NuGet\Cache -Force
+        #rm -r $env:localappdata\NuGet\Cache -Force
+        &cmd.exe /C 'RMDIR /S /Q "%LOCALAPPDATA%\NuGet\Cache"'
     }
 }
 

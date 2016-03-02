@@ -15,7 +15,7 @@ param (
     [ValidateSet("Release", "alpha", "beta", "build", "local")]
     [Alias('label')]
     [string]$BuildLabel = 'local',
-    [ValidateRange(1,9999)]
+    [ValidateRange(1,99999)]
     [Alias('build')]
     [int]$BuildNumber,
     [string]$CommitId = "0000000000000000000000000000000000000000",
@@ -57,7 +57,7 @@ Invoke-BuildStep 'Cleaning package cache' { Clear-PackageCache } `
 #     -ev +BuildErrors
 
 Invoke-BuildStep 'Installing DNX runtimes' `
-    { Install-DNX -v $DnxVersion -u -r CoreCLR -a x64; Install-DNX -v $DnxVersion -u -r CLR -a x64 -Default } `
+    { Install-DNX -v $DnxVersion -r CoreCLR -a x64; Install-DNX -v $DnxVersion -r CLR -a x64 -Default } `
     -ev +BuildErrors
 
 Invoke-BuildStep 'Building projects' {
