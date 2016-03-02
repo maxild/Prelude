@@ -257,9 +257,12 @@ Function Get-BuildNumber() {
     [int](((Get-Date) - (Get-Date $SemanticVersionDate)).TotalMinutes / 5)
 }
 
-# D4 means 'pad left with 0000', 1 -> '0001', 2 -> '0002',..., 12345 -> '12345' etc.
+# D5 means 'pad left with 00000', 1 -> '00001', 2 -> '00002' etc.
 Function Format-BuildNumber([int]$BuildNumber) {
-    '{0:D4}' -f $BuildNumber
+    if ($BuildNumber -gt 99999) {
+        Throw "Build number cannot be greater than 99999, because of Legacy SemVer limitations in Nuget."
+    }
+    '{0:D5}' -f $BuildNumber # Can handle 0001,...,99999 (this should be enough)
 }
 
 # Remove all content inside ./artifacts folder
@@ -383,21 +386,19 @@ Function Invoke-DnuPack {
     )
     Begin {
 
-        # FWIW I have no idea why we need to call Format-BuildNumber
-        # when re-assigning to Int32 again...this is a noop.
-        $BuildNumber = Format-BuildNumber $BuildNumber
+        [string]$paddedBuildNumber = Format-BuildNumber $BuildNumber
 
         # In project.json we could have: { "version": "1.0.0-*", ...}
         # If you set the DNX_BUILD_VERSION environment variable, it
         # will replace the -* with -{DNX_BUILD_VERSION}.
         # Setting the DNX build version (This will make a pre-release SemVer:
-        # 1.0.0-* will become 1.0.0-{BuildLabel}-{BuildNumber})
-        if($BuildLabel -ne 'Release') {
-            $env:DNX_BUILD_VERSION="${BuildLabel}-${BuildNumber}"
+        # 1.0.0-* will become 1.0.0-{PrereleaseTag}-{BuildNumber})
+        if($PrereleaseTag -ne 'Release') {
+            $env:DNX_BUILD_VERSION="${PrereleaseTag}-${paddedBuildNumber}"
         }
 
         # Setting the DNX AssemblyFileVersion
-        $env:DNX_ASSEMBLY_FILE_VERSION=$BuildNumber
+        $env:DNX_ASSEMBLY_FILE_VERSION=$paddedBuildNumber
 
         # TODO: Investigate DNX_BUILD_PORTABLE_PDB envvar (See https://github.com/aspnet/dnx/pull/2609)
 

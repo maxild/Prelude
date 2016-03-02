@@ -12,9 +12,13 @@ param (
     [ValidateSet("debug", "release")]
     [Alias('config')]
     [string]$Configuration = 'debug',
-    [ValidateSet("Release", "alpha", "beta", "build", "local")]
+    [ValidateSet("Release", `
+                 "alpha", `
+                 "beta1", "beta2", "beta3", "beta4", "beta5", `
+                 "rc1", "rc2", "rc3", "rc4", "rc5", `
+                 "local")]
     [Alias('label')]
-    [string]$BuildLabel = 'local',
+    [string]$PrereleaseTag = 'local',
     [ValidateRange(1,99999)]
     [Alias('build')]
     [int]$BuildNumber,
