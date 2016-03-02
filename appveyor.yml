@@ -2,7 +2,7 @@ init:
   - git config --global core.autocrlf true
 
 build_script:
-  - ps: .\build.ps1 -Configuration Release -BuildLabel build -BuildNumber $env:APPVEYOR_BUILD_NUMBER -CommitId $env:APPVEYOR_REPO_COMMIT
+  - ps: .\build.ps1 -config Release -label build -build $env:APPVEYOR_BUILD_NUMBER -CommitId $env:APPVEYOR_REPO_COMMIT
 
 # Do not clone entire repo/history. Instead limit the number of last commits to one.
 clone_depth: 1
