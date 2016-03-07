@@ -2,7 +2,7 @@ using Xunit;
 
 namespace Maxfire.Prelude.ComponentModel.Tests
 {
-    public class EnumerationTypeConverterTests
+    public class EnumerationConverterTests
     {
         public class BooleanEnumeration : Enumeration<BooleanEnumeration>
         {
@@ -18,28 +18,28 @@ namespace Maxfire.Prelude.ComponentModel.Tests
         [Fact]
         public void CanConvertFrom()
         {
-            var sut = new EnumerationTypeConverter<BooleanEnumeration>();
+            var sut = new EnumerationConverter<BooleanEnumeration>();
             Assert.True(sut.CanConvertFrom(typeof (string)));
         }
 
         [Fact]
         public void CanConvertTo()
         {
-            var sut = new EnumerationTypeConverter<BooleanEnumeration>();
+            var sut = new EnumerationConverter<BooleanEnumeration>();
             Assert.True(sut.CanConvertTo(typeof(string)));
         }
 
         [Fact]
         public void ConvertFrom()
         {
-            var sut = new EnumerationTypeConverter<BooleanEnumeration>();
+            var sut = new EnumerationConverter<BooleanEnumeration>();
             Assert.Equal(BooleanEnumeration.True, sut.ConvertFrom("True"));
         }
 
         [Fact]
         public void ConvertTo()
         {
-            var sut = new EnumerationTypeConverter<BooleanEnumeration>();
+            var sut = new EnumerationConverter<BooleanEnumeration>();
             Assert.Equal("True", sut.ConvertToString(BooleanEnumeration.True));
         }
     }

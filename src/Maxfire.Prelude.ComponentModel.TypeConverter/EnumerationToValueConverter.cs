@@ -2,10 +2,10 @@
 
 namespace Maxfire.Prelude.ComponentModel
 {
-    public class EnumerationToValueTypeConverter<TEnumeration> : EnumerationTypeConverter<TEnumeration>
+    public class EnumerationToValueConverter<TEnumeration> : EnumerationConverter<TEnumeration>
         where TEnumeration : Enumeration<TEnumeration>
     {
-        public EnumerationToValueTypeConverter()
+        public EnumerationToValueConverter()
             : base(e => e.Value.ToString(CultureInfo.InvariantCulture))
         {
         }

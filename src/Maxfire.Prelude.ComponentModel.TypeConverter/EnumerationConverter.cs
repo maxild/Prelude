@@ -3,16 +3,16 @@ using System.Globalization;
 
 namespace Maxfire.Prelude.ComponentModel
 {
-    public class EnumerationTypeConverter<TEnumeration> : AbstractTypeConverter<TEnumeration>
+    public class EnumerationConverter<TEnumeration> : AbstractTypeConverter<TEnumeration>
         where TEnumeration : Enumeration<TEnumeration>
     {
         private readonly Func<TEnumeration, string> _convertToString;
 
-        public EnumerationTypeConverter()
+        public EnumerationConverter()
         {
         }
 
-        protected EnumerationTypeConverter(Func<TEnumeration, string> converter)
+        protected EnumerationConverter(Func<TEnumeration, string> converter)
         {
             _convertToString = converter;
         }
