@@ -1,0 +1,32 @@
+﻿{
+    "version": "1.0.0-*",
+    "description": "Maxfire.Prelude.ComponentModel.TypeConverters Class Library",
+    "authors": [ "Morten Maxild" ],
+    "owners": [ "Morten Maxild" ],
+    "tags": [ "prelude" ],
+    "releaseNotes": "CoreCLR support (rc1)",
+    "copyright": "Copyright © Morten Maxild 2016",
+    "licenseUrl": "http://www.apache.org/licenses/LICENSE-2.0",
+    "projectUrl": "https://github.com/maxild/Prelude/",
+    "compilationOptions": {
+        "warningsAsErrors": true
+    },
+    "dependencies": {
+        "Maxfire.Prelude.Core": ""
+    },
+    "frameworks": {
+        "net451": {
+            "dependencies": {
+            },
+            "frameworkAssemblies": {
+                "System.ComponentModel": "4.0.0.0"
+            }
+        },
+        "dnxcore50": {
+            "dependencies": {
+                "System.Runtime": "4.0.21-beta-*",
+                "System.ComponentModel.TypeConverter": "4.0.1-beta-*"
+            }
+        }
+    }
+}

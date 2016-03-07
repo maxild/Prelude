@@ -13,6 +13,10 @@ namespace Maxfire.Prelude
 #endif
     public abstract class Enumeration
     {
+        protected Enumeration(int value, string name) : this(value, name, name)
+        {
+        }
+
         protected Enumeration(int value, string name, string text)
         {
             if (string.IsNullOrEmpty(name))
@@ -177,7 +181,7 @@ namespace Maxfire.Prelude
 #if !DNXCORE50
     [Serializable]
 #endif
-    public abstract class Enumeration<TEnumeration> : Enumeration, IEquatable<TEnumeration>, IComparable, IComparable<TEnumeration>, IFormattable, IConvertible
+    public abstract class Enumeration<TEnumeration> : Enumeration, IEquatable<TEnumeration>, IComparable, IComparable<TEnumeration>, IFormattable
         where TEnumeration : Enumeration<TEnumeration>
     {
         #region Cached Fields Per Type Infrastructure
@@ -206,7 +210,7 @@ namespace Maxfire.Prelude
 
         #endregion
 
-        protected Enumeration(int value, string name) : base(value, name, name)
+        protected Enumeration(int value, string name) : base(value, name)
         {
         }
 
@@ -291,163 +295,6 @@ namespace Maxfire.Prelude
                 default:
                     throw new FormatException($"Unsupported format '{format}'");
             }
-        }
-
-        TypeCode IConvertible.GetTypeCode()
-        {
-            return TypeCode.Int32;
-        }
-
-        bool IConvertible.ToBoolean(IFormatProvider provider)
-        {
-            return Convert.ToBoolean(Value, provider);
-        }
-
-        char IConvertible.ToChar(IFormatProvider provider)
-        {
-            return Convert.ToChar(Value, provider);
-        }
-
-        sbyte IConvertible.ToSByte(IFormatProvider provider)
-        {
-            return Convert.ToSByte(Value, provider);
-        }
-
-        byte IConvertible.ToByte(IFormatProvider provider)
-        {
-            return Convert.ToByte(Value, provider);
-        }
-
-        short IConvertible.ToInt16(IFormatProvider provider)
-        {
-            return Convert.ToInt16(Value, provider);
-        }
-
-        ushort IConvertible.ToUInt16(IFormatProvider provider)
-        {
-            return Convert.ToUInt16(Value, provider);
-        }
-
-        int IConvertible.ToInt32(IFormatProvider provider)
-        {
-            return Convert.ToInt32(Value, provider);
-        }
-
-        uint IConvertible.ToUInt32(IFormatProvider provider)
-        {
-            return Convert.ToUInt32(Value, provider);
-        }
-
-        long IConvertible.ToInt64(IFormatProvider provider)
-        {
-            return Convert.ToInt64(Value, provider);
-        }
-
-        ulong IConvertible.ToUInt64(IFormatProvider provider)
-        {
-            return Convert.ToUInt64(Value, provider);
-        }
-
-        float IConvertible.ToSingle(IFormatProvider provider)
-        {
-            return Convert.ToSingle(Value, provider);
-        }
-
-        double IConvertible.ToDouble(IFormatProvider provider)
-        {
-            return Convert.ToDouble(Value, provider);
-        }
-
-        decimal IConvertible.ToDecimal(IFormatProvider provider)
-        {
-            return Convert.ToDecimal(Value, provider);
-        }
-
-        DateTime IConvertible.ToDateTime(IFormatProvider provider)
-        {
-            throw new InvalidCastException(GetInvalidCastMessage(typeof(DateTime)));
-        }
-
-        string IConvertible.ToString(IFormatProvider provider)
-        {
-            return ToString();
-        }
-
-        object IConvertible.ToType(Type targetType, IFormatProvider provider)
-        {
-            if (targetType == null)
-                throw new ArgumentNullException(nameof(targetType));
-            if (GetType() == targetType || targetType == typeof(object))
-                return this;
-
-            IConvertible convertible = this;
-
-            if (targetType == typeof(bool))
-            {
-                return convertible.ToBoolean(provider);
-            }
-            if (targetType == typeof(char))
-            {
-                return convertible.ToChar(provider);
-            }
-            if (targetType == typeof(sbyte))
-            {
-                return convertible.ToSByte(provider);
-            }
-            if (targetType == typeof(byte))
-            {
-                return convertible.ToByte(provider);
-            }
-            if (targetType == typeof(short))
-            {
-                return convertible.ToInt16(provider);
-            }
-            if (targetType == typeof(ushort))
-            {
-                return convertible.ToUInt16(provider);
-            }
-            if (targetType == typeof(int))
-            {
-                return convertible.ToInt32(provider);
-            }
-            if (targetType == typeof(uint))
-            {
-                return convertible.ToUInt32(provider);
-            }
-            if (targetType == typeof(long))
-            {
-                return convertible.ToInt64(provider);
-            }
-            if (targetType == typeof(ulong))
-            {
-                return convertible.ToUInt64(provider);
-            }
-            if (targetType == typeof(float))
-            {
-                return convertible.ToSingle(provider);
-            }
-            if (targetType == typeof(double))
-            {
-                return convertible.ToDouble(provider);
-            }
-            if (targetType == typeof(decimal))
-            {
-                return convertible.ToDecimal(provider);
-            }
-            if (targetType == typeof(DateTime))
-            {
-                return convertible.ToDateTime(provider);
-            }
-            if (targetType == typeof(string))
-            {
-                return convertible.ToString(provider);
-            }
-            throw new InvalidCastException(GetInvalidCastMessage(targetType));
-        }
-
-        private string GetInvalidCastMessage(Type targetType)
-        {
-            return $"A value of type '{GetType().FullName}' cannot be converted to a value of type '{targetType.FullName}'.";
         }
     }
 }
