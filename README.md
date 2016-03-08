@@ -10,9 +10,9 @@ Travis:   [![Travis](https://travis-ci.org/aspnet/Common.svg?branch=dev)](https:
 
 ## Get Packages
 
-Releases are published to nuget.org. Insert link to gallery here.
+Releases are published to nuget.org. Insert link to gallery here, when we are ready to support official releases.
 
-If you're feeling adventurous, [continuous integration builds are on MyGet](https://www.myget.org/gallery/prelude).
+If you're feeling adventurous, [continuous integration builds are on MyGet](https://www.myget.org/gallery/maxfire-prelude).
 
 ## Misc
 
