@@ -1,4 +1,4 @@
-﻿{
+{
     "version": "1.0.0-*",
     "description": "Maxfire.Prelude.ComponentModel.TypeConverters Class Library",
     "authors": [ "Morten Maxild" ],
@@ -19,7 +19,6 @@
             "dependencies": {
             },
             "frameworkAssemblies": {
-                "System.ComponentModel": "4.0.0.0"
             }
         },
         "dnxcore50": {
