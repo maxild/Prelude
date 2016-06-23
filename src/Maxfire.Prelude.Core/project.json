@@ -1,35 +1,36 @@
 {
-    "description": "The core library of Maxfire.Prelude. The library contains extensions to .NET BCL that can be used when running on .NET Framework 4.x or .NET Core 1.0.",
     "version": "1.0.0-*",
-    "authors": [ "Morten Maxild" ],
-    "owners": [ "Morten Maxild" ],
-    "tags": [ "prelude" ],
-    "releaseNotes": "CoreCLR support (rc1)",
-    "copyright": "Copyright © Morten Maxild 2016",
-    "licenseUrl": "http://www.apache.org/licenses/LICENSE-2.0",
-    "projectUrl": "https://github.com/maxild/Prelude/",
-    "compilationOptions": {
-        "warningsAsErrors": true
-    },
-    "dependencies": {
-    },
-    "frameworks": {
-        "net451": {
-            "dependencies": {
-            },
-            "frameworkAssemblies": {
-            }
+    "description": "The core library of Maxfire.Prelude. The library contains extensions to .NET BCL that can be used when running on .NET Framework 4.x or .NET Core 1.0.",
+    "packOptions": {
+        "repository": {
+            "type": "git",
+            "url": "https://github.com/maxild/Prelude"
         },
-        "dnxcore50": {
+        "owners": [ "Morten Maxild" ],
+        "releaseNotes": "CoreCLR support (rc2)",
+        "copyright": "Copyright © Morten Maxild 2016",
+        "licenseUrl": "http://www.apache.org/licenses/LICENSE-2.0",
+        "projectUrl": "https://github.com/maxild/Prelude",
+        "tags": [
+            "prelude"
+        ]
+    },
+    "buildOptions": {
+        "warningsAsErrors": true,
+        "nowarn": [ "CS1591" ],
+        "xmlDoc": true
+    },
+    "authors": [ "Morten Maxild" ],
+
+    "dependencies": {
+        "NETStandard.Library": "1.5.0-rc2-24027"
+    },
+
+    "frameworks": {
+        "net46": {},
+        "netstandard1.3": {
             "dependencies": {
-                "System.Runtime": "4.0.21-beta-*",
-                "System.Reflection": "4.1.0-beta-*",
-                "System.Reflection.Extensions": "4.0.1-beta-*",
-                "System.Reflection.TypeExtensions": "4.0.1-beta-*",
-                "System.Collections": "4.0.11-beta-*",
-                "System.Linq": "4.0.1-beta-*",
-                "System.Linq.Expressions": "4.0.11-beta-*",
-                "System.Threading": "4.0.11-beta-*"
+                "System.Linq.Expressions": "4.0.11-rc2-24027"
             }
         }
     }

@@ -1,4 +1,5 @@
 using Xunit;
+using Shouldly;
 
 namespace Maxfire.Prelude.ComponentModel.Tests
 {
@@ -19,28 +20,28 @@ namespace Maxfire.Prelude.ComponentModel.Tests
         public void CanConvertFrom()
         {
             var sut = new EnumerationToValueConverter<BooleanEnumeration>();
-            Assert.True(sut.CanConvertFrom(typeof(string)));
+            sut.CanConvertFrom(typeof(string)).ShouldBeTrue();
         }
 
         [Fact]
         public void CanConvertTo()
         {
             var sut = new EnumerationToValueConverter<BooleanEnumeration>();
-            Assert.True(sut.CanConvertTo(typeof(string)));
+            sut.CanConvertTo(typeof(string)).ShouldBeTrue();
         }
 
         [Fact]
         public void ConvertFrom()
         {
             var sut = new EnumerationToValueConverter<BooleanEnumeration>();
-            Assert.Equal(BooleanEnumeration.True, sut.ConvertFrom("1"));
+            sut.ConvertFrom("1").ShouldBe(BooleanEnumeration.True);
         }
 
         [Fact]
         public void ConvertTo()
         {
             var sut = new EnumerationToValueConverter<BooleanEnumeration>();
-            Assert.Equal("1", sut.ConvertToString(BooleanEnumeration.True));
+            sut.ConvertToString(BooleanEnumeration.True).ShouldBe("1");
         }
     }
 }

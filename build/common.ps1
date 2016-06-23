@@ -31,18 +31,30 @@ Function Create-Dir {
 
 $ValidConfigurations = 'debug', 'release'
 $DefaultConfiguration = 'debug'
-$ValidReleaseLabels = 'Release','rtm', 'rc', 'beta', 'local' # TODO: Not used!!
-$DefaultReleaseLabel = 'local'
-
-# The following 2 DNX versions are the defaults on the stable and unstable feeds as of today
-$DefaultDnxVersion = '1.0.0-rc1-update1'
-$DefaultUnstableDnxVersion = '1.0.0-rc2-16357'
-$DefaultDnxArch = 'x86'
-$DnvmCmd = Join-Path $env:USERPROFILE '.dnx\bin\dnvm.cmd'
+$ValidBuildLabels = 'Release','rtm', 'rc', 'beta', 'local' # TODO: Not used!!
+$DefaultBuildLabel = 'local'
 
 $RepoRoot = Get-DirName $PSScriptRoot
-$NuGetExe = Join-Path $RepoRoot '.nuget\nuget.exe'
-$ArtifactsFolder = Join-Path $RepoRoot artifacts
+$ArtifactsFolder = Join-Path $RepoRoot 'artifacts'
+$SrcFolder = Join-Path $RepoRoot 'src'
+$TestFolder = Join-Path $RepoRoot 'test'
+
+$DotNetCliFolder = Join-Path $RepoRoot '.dotnetcli'
+$DotNetExe = Join-Path $DotNetCliFolder 'dotnet.exe'
+
+$MSBuildRoot = Join-Path ${env:ProgramFiles(x86)} 'MSBuild\'
+#$MSBuildExeRelPath = 'bin\msbuild.exe'
+
+$NuGetFolder = Join-Path $RepoRoot '.nuget'
+$NuGetExe = Join-Path $NuGetFolder 'nuget.exe'
+
+#$XunitConsole = Join-Path $NuGetClientRoot 'packages\xunit.runner.console.2.1.0\tools\xunit.console.exe'
+#$ILMerge = Join-Path $NuGetClientRoot 'packages\ILMerge.2.14.1208\tools\ILMerge.exe'
+
+Set-Alias dotnet $DotNetExe
+Set-Alias nuget $NuGetExe
+#Set-Alias xunit $XunitConsole
+#Set-Alias ilmerge $ILMerge
 
 # TODO: We probably don't need <add key="BuildFeed" value="Nupkgs" /> in our
 # Nuget.config, so delete BuildFeed below
@@ -128,122 +140,97 @@ Function Invoke-BuildStep {
     }
 }
 
+Function Test-MSBuildVersionPresent {
+    [CmdletBinding()]
+    param(
+        [string]$MSBuildVersion
+    )
+
+    $MSBuildExe = Get-MSBuildExe $MSBuildVersion
+    Test-Path $MSBuildExe
+}
+
+Function Get-MSBuildExe {
+    param(
+        [string]$MSBuildVersion
+    )
+
+    $MSBuildExe = Join-Path $MSBuildRoot ($MSBuildVersion + ".0")
+    Join-Path $MSBuildExe $MSBuildExeRelPath
+}
+
 # Downloads NuGet.exe if missing
 Function Install-NuGet {
     [CmdletBinding()]
     param(
-        [string] $NugetVersion = "latest"
+        [string] $NugetVersion = "latest-prerelease"
     )
+
+    # Create .nuget folder if necessary
+    New-Item -ItemType Directory -Force -Path $NuGetFolder | Out-Null
+
+    # TODO: What about self-updating???
     if (-not (Test-File $NuGetExe)) {
         Trace-Log 'Downloading nuget.exe'
         Invoke-WebRequest "https://dist.nuget.org/win-x86-commandline/$NugetVersion/nuget.exe" -OutFile $NuGetExe
     }
 }
 
-# Validates DNVM installed and installs it if missing
-Function Install-DNVM {
-    [CmdletBinding()]
-    param()
-    if (-not (Test-File $DnvmCmd)) {
-        Trace-Log 'Downloading DNVM'
-        # See also: https://docs.asp.net/en/latest/getting-started/installing-on-windows.html#install-asp-net-5-from-the-command-line
-        &{
-            $Branch='dev'
-            iex (`
-                (new-object net.webclient).DownloadString('https://raw.githubusercontent.com/aspnet/Home/dev/dnvminstall.ps1')`
-            )
-        }
-    }
-}
-
-# Makes sure the needed DNX runtimes installed
-Function Install-DNX {
+# Note: The official RC2 MSI installer (DotNetCore.1.0.0.RC2-SDK.Preview1-x64.exe) will
+#       install version 1.0.0-preview1-002702
+Function Install-DotnetCLI {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$True, Position=0)]
-        [Alias('r')]
-        [ValidateSet('CLR', 'CoreCLR')]
-        [string]$Runtime,
-        [Alias('v')]
-        [string]$Version,
-        [Alias('a')]
-        [string]$Arch = $DefaultDnxArch,
-        [switch]$Default,
-        [Alias('u')]
-        [switch]$Unstable
+        [string] $CLIVersion = "1.0.0-preview2-003030"
     )
-    Install-DNVM
-    $env:DNX_FEED = 'https://www.nuget.org/api/v2'
-    $env:DNX_UNSTABLE_FEED = 'https://www.myget.org/F/aspnetvnext/api/v2'
-    $resolvedVersion = Resolve-DnxVersion -v $Version -u:$Unstable
-    if ($Unstable) {
-        Verbose-Log "dnvm install $resolvedVersion -u -runtime $Runtime -arch $Arch"
-        if ($Default) {
-            & dnvm install $resolvedVersion -u -runtime $Runtime -arch $Arch -alias default 2>&1
-        }
-        else {
-            & dnvm install $resolvedVersion -u -runtime $Runtime -arch $Arch 2>&1
-        }
-    }
-    else {
-        Verbose-Log "dnvm install $resolvedVersion -runtime $Runtime -arch $Arch"
-        if ($Default) {
-            & dnvm install $resolvedVersion -runtime $Runtime -arch $Arch -alias default 2>&1
-        }
-        else {
-            & dnvm install $resolvedVersion -runtime $Runtime -arch $Arch 2>&1
-        }
-    }
-}
 
-Function Use-DNX {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory=$True, Position=0)]
-        [Alias('r')]
-        [ValidateSet('CLR', 'CoreCLR')]
-        [string]$Runtime,
-        [Alias('v')]
-        [string]$Version,
-        [Alias('a')]
-        [string]$Arch = $DefaultDnxArch,
-        [Alias('u')]
-        [switch]$Unstable
-    )
-    $resolvedVersion = Resolve-DnxVersion -v $Version -u:$Unstable
-    Verbose-Log "dnvm use $resolvedVersion -runtime $Runtime -arch $Arch"
-    & dnvm use $resolvedVersion -runtime $Runtime -arch $Arch 2>&1
-}
+    Trace-Log 'Downloading Dotnet CLI'
 
-Function Resolve-DnxVersion {
-    [CmdletBinding()]
-    param(
-        [Alias('v')]
-        [string]$Version,
-        [Alias('u')]
-        [switch]$Unstable
-    )
-    # user defined SDK version
-    if ($Version) {
-        return $Version
+    # create .dotnetcli subfolder if necessary
+    New-Item -ItemType Directory -Force -Path $DotNetCliFolder | Out-Null
+
+    # Windows .NET Core search paths:
+    #   1) %DOTNET_HOME%
+    #   2) %LOCALAPPDATA%\Microsoft\dotnet (this is where install.ps1 installs by default)
+    #   3) %ProgramFiles%\dotnet (Windows MSI installer)
+    #
+    # Unix???
+    #   1) $DOTNET_HOME
+    #   2) Maybe a user level search path? ~/.dotnet? While tooling will probably be global-install, I do think we'll want user-installed runtimes
+    #   3) /usr/local/share/dotnet
+    #   4) /usr/share/dotnet
+
+# CLI notes:
+#
+# Installing CLI (scripts/obtain/install.ps1)
+#   $env:CLI_VERSION="1.0.0-beta-002071"
+#   $env:DOTNET_INSTALL_DIR = "$pwd\.dotnetcli"
+#   & .\scripts\obtain\install.ps1 -Channel "preview" -version "$env:CLI_VERSION" -InstallDir "$env:DOTNET_INSTALL_DIR" -NoPath
+
+    # Define the DOTNET_HOME directory for tools in the CLI
+    $env:DOTNET_HOME=$DotNetCliFolder
+
+    # Define the install root for the script (it defaults to $env:LocalAppData\Microsoft\dotnet)
+    $env:DOTNET_INSTALL_DIR=$RepoRoot
+
+    $DotNetInstallScript = Join-Path $DotNetCliFolder "dotnet-install.ps1"
+
+    # wget the ./scripts/obtain/dotnet-install.ps1 script from the 'rel/1.0.0' branch in the github repo
+    Invoke-WebRequest 'https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0/scripts/obtain/dotnet-install.ps1' -OutFile $DotNetInstallScript
+
+    # Install a pre-release stable (preview) version
+    & $DotNetInstallScript -Channel preview -i $DotNetCliFolder -Version $CLIVersion
+
+    if (-not (Test-Path $DotNetExe)) {
+        Error-Log "Unable to find dotnet.exe. The CLI install may have failed." -Fatal
     }
-    # global.json defined SDK version
-    $globalDnxVersion = Get-DnxVersion
-    if ($globalDnxVersion) {
-        return $globalDnxVersion
-    }
-    # Fallback versions defined as global variables (we do not use 'default' version defined by DNVM)
-    if ($Unstable) {
-        $DefaultUnstableDnxVersion
-    }
-    else {
-        $DefaultDnxVersion
-    }
+
+    # Display build info
+    & $DotNetExe --info
 }
 
 # Get the sdk version from global.json
-# TODO: should allow empty to be default alias
-Function Get-DnxVersion
+Function Get-SdkVersionFromGlobalJson
 {
     $repoRoot = Split-Path -Path $PSScriptRoot -Parent
     $globalJson = join-path $repoRoot "global.json"
@@ -275,106 +262,136 @@ Function Clear-Artifacts {
     }
 }
 
-# Clean the machine level cache from all packages (better to be safe than sorry)
-#          * Note: It is possible to run DNU with --no-cache switch
-#          * Note: DNU clear-http-cache command will clear the package cache
 Function Clear-PackageCache {
     [CmdletBinding()]
     param()
+    Trace-Log 'Cleaning package cache (except the web cache)'
 
-    Trace-Log 'Removing DNX packages (~\.dnx\packages)'
+    # Possible caches to clear are:
+    #   all | http-cache | packages-cache | global-packages | temp
 
-    # Note: 'Remove-Item -Recurse -Force' sometimes errors,
-    #       therefore we use 'cmd.exe /c RMDIR /S /Q' (DOS command)
+    #& nuget locals http-cache -clear -verbosity detailed
+    & nuget locals packages-cache -clear -verbosity detailed
+    #& nuget locals global-packages -clear -verbosity detailed
+    & nuget locals temp -clear -verbosity detailed
+}
 
-    # wipe out ~\.dnx\packages
-    if (Test-Dir $env:userprofile\.dnx\packages) {
-        #rm -r $env:userprofile\.dnx\packages -Force
-        &cmd.exe /C 'RMDIR /S /Q "%USERPROFILE%\.dnx\packages"'
+Function Restore-SolutionPackages{
+    [CmdletBinding()]
+    param(
+        [Alias('path')]
+        [string]$SolutionPath,
+        [ValidateSet(4, 12, 14, 15)]
+        [int]$MSBuildVersion
+    )
+    $opts = , 'restore'
+    if (-not $SolutionPath) {
+        $opts += "${RepoRoot}\.nuget\packages.config", '-SolutionDirectory', $RepoRoot
+    }
+    else {
+        $opts += $SolutionPath
+    }
+    if ($MSBuildVersion) {
+        $opts += '-MSBuildVersion', $MSBuildVersion
     }
 
-    Trace-Log 'Removing NuGet packages (~\.nuget\packages)'
-
-    # wipe out ~\.nuget\packages
-    if (Test-Dir $env:userprofile\.nuget\packages) {
-        #rm -r $env:userprofile\.nuget\packages -Force
-        &cmd.exe /C 'RMDIR /S /Q "%USERPROFILE%\.nuget\packages"'
+    if (-not $VerbosePreference) {
+        $opts += '-verbosity', 'quiet'
     }
 
-    Trace-Log 'Removing DNU cache (~\AppData\Local\dnu\cache)'
-
-    # wipe out ~\AppData\Local\dnu\cache (sometimes it can get corrupted)
-    if (Test-Dir $env:localappdata\dnu\cache) {
-        #rm -r $env:localappdata\dnu\cache -Force
-        &cmd.exe /C 'RMDIR /S /Q "%LOCALAPPDATA%\dnu\cache"'
-    }
-
-    Trace-Log 'Removing NuGet web cache (~\AppData\Local\NuGet\v3-cache)'
-
-    # wipe out ~\AppData\Local\NuGet\v3-cache (sometimes it can get corrupted)
-    if (Test-Dir $env:localappdata\NuGet\v3-cache) {
-        #rm -r $env:localappdata\NuGet\v3-cache -Force
-        &cmd.exe /C 'RMDIR /S /Q "%LOCALAPPDATA%\NuGet\v3-cache"'
-    }
-
-    Trace-Log 'Removing NuGet machine cache (~\AppData\Local\NuGet\Cache)'
-
-    # wipe out ~\AppData\Local\NuGet\Cache (a lot of nupkg files)
-    if (Test-Dir $env:localappdata\NuGet\Cache) {
-        #rm -r $env:localappdata\NuGet\Cache -Force
-        &cmd.exe /C 'RMDIR /S /Q "%LOCALAPPDATA%\NuGet\Cache"'
+    Trace-Log "Restoring packages @""$RepoRoot"""
+    Trace-Log "$NuGetExe $opts"
+    & $NuGetExe $opts
+    if (-not $?) {
+        Error-Log "Restore failed @""$RepoRoot"". Code: ${LASTEXITCODE}"
     }
 }
 
 # Restore projects individually (dnu restore ../project.json -s sources)
-Function Restore-Project {
-    [CmdletBinding()]
-    param(
-        [parameter(ValueFromPipeline=$True, Mandatory=$True, Position=0)]
-        [string[]]$ProjectLocations
-    )
-    Begin {}
-    Process {
-        $ProjectLocations | %{
-            $projectJsonFile = Join-Path $_ 'project.json'
-            $opts = 'restore', $projectJsonFile
-            $opts += $PackageSources | %{ '-s', $_ }
-            if (-not $VerbosePreference) {
-                $opts += '--quiet'
-            }
+# Function Restore-Project {
+#     [CmdletBinding()]
+#     param(
+#         [parameter(ValueFromPipeline=$True, Mandatory=$True, Position=0)]
+#         [string[]]$ProjectLocations
+#     )
+#     Begin {}
+#     Process {
+#         $ProjectLocations | %{
+#             $projectJsonFile = Join-Path $_ 'project.json'
+#             $opts = 'restore', $projectJsonFile
+#             $opts += $PackageSources | %{ '-s', $_ }
+#             if (-not $VerbosePreference) {
+#                 $opts += '--quiet'
+#             }
 
-            Trace-Log "Restoring packages @""$_"""
-            Verbose-Log "dnu $opts"
-            & dnu $opts 2>&1
-            if (-not $?) {
-                Error-Log "Restore failed @""$_"". Code: $LASTEXITCODE"
-            }
-        }
+#             Trace-Log "Restoring packages @""$_"""
+#             Verbose-Log "dnu $opts"
+#             & dnu $opts 2>&1
+#             if (-not $?) {
+#                 Error-Log "Restore failed @""$_"". Code: $LASTEXITCODE"
+#             }
+#         }
+#     }
+#     End {}
+# }
+
+# Function Restore-Projects {
+#     [CmdletBinding()]
+#     param([string]$projectsLocation)
+
+#     $projects = Find-XProjects $projectsLocation
+#     $projects | Restore-Project
+# }
+
+Function Restore-XProjects($projectsLocation) {
+
+    # The restore command is recursive (unlike the build and pack commands)
+    # That is options can be a folder to recursively search for project.json files
+    $opts = 'restore', $projectsLocation
+
+    if (-not $VerbosePreference) {
+        $opts += '--verbosity', 'minimal'
     }
-    End {}
+
+    Trace-Log "Restoring packages for xprojs"
+    Trace-Log "$dotnetExe $opts"
+
+    & $DotNetExe $opts
+
+    if (-not $?) {
+        Error-Log "Restore failed @""$_"". Code: $LASTEXITCODE"
+    }
 }
 
-# TODO: project.json instead....maybe
 # Find all paths to all folders with an xproj file
-Function Find-Projects($projectsLocation) {
+Function Find-XProjects($projectsLocation) {
     Get-ChildItem $projectsLocation -Recurse -Filter '*.xproj' |`
         %{ Get-DirName $_.FullName }
 }
 
-# dnu restore all DNX projects
-Function Restore-Projects {
+# Build production code
+Function Build-SrcProjects {
     [CmdletBinding()]
-    param([string]$projectsLocation)
+    param(
+        [string]$Configuration = $DefaultConfiguration,
+        [string]$BuildLabel = $DefaultBuildLabel,
+        [int]$BuildNumber = (Get-BuildNumber),
+        [switch]$SkipRestore
+    )
 
-    $projects = Find-Projects $projectsLocation
-    $projects | Restore-Project
+    if (-not $SkipRestore) {
+        Restore-XProjects $SrcFolder
+    }
+
+    $xprojects = Find-XProjects $SrcFolder
+    $xprojects | Invoke-DotnetPack -config $Configuration -label $BuildLabel -build $BuildNumber -out $ArtifactsFolder
 }
 
-Function Invoke-DnuPack {
+Function Invoke-DotnetPack {
     [CmdletBinding()]
     param(
         [parameter(ValueFromPipeline=$True, Mandatory=$True, Position=0)]
-        [string[]]$ProjectLocations,
+        [string[]]$XProjectLocations,
         [Alias('config')]
         [string]$Configuration = $DefaultConfiguration,
         [Alias('label')]
@@ -385,47 +402,32 @@ Function Invoke-DnuPack {
         [string]$Output
     )
     Begin {
+        $BuildNumber = Format-BuildNumber $BuildNumber
 
-        [string]$paddedBuildNumber = Format-BuildNumber $BuildNumber
-
-        # In project.json we could have: { "version": "1.0.0-*", ...}
-        # If you set the DNX_BUILD_VERSION environment variable, it
-        # will replace the -* with -{DNX_BUILD_VERSION}.
-        # Setting the DNX build version (This will make a pre-release SemVer:
-        # 1.0.0-* will become 1.0.0-{PrereleaseTag}-{BuildNumber})
-        if($PrereleaseTag -ne 'Release') {
-            $env:DNX_BUILD_VERSION="${PrereleaseTag}-${paddedBuildNumber}"
-        }
-
-        # Setting the DNX AssemblyFileVersion
-        $env:DNX_ASSEMBLY_FILE_VERSION=$paddedBuildNumber
-
-        # TODO: Investigate DNX_BUILD_PORTABLE_PDB envvar (See https://github.com/aspnet/dnx/pull/2609)
-
-        # TODO: We need to put git-sha (commit-id) into dnu pack????
-
-        # TODO: Investigate source indexing pdb files with git commit-id
-
-        # For project.json as { "version": "1.0.0-*", ...}, together with label='build'
-        # and build=12345, the end result is something equivalent to:
-        #  [assembly: AssemblyVersion("1.0.0.0")]
-        #  [assembly: AssemblyFileVersion("1.0.0.12345")]
-        #  [assembly: AssemblyInformationalVersion("1.0.0-build-12345")]
+        # Setting the Dotnet AssemblyFileVersion
+        $env:DOTNET_ASSEMBLY_FILE_VERSION=$BuildNumber
     }
     Process {
-        $ProjectLocations | %{
-            $opts = , 'pack'
-            $opts += $_
-            $opts += '--configuration', $Configuration
-            if ($Output) {
-                $opts += '--out', (Join-Path $Output (Get-FileName $_))
+        $XProjectLocations | %{
+            $opts = @()
+            if ($VerbosePreference) {
+                $opts += '-v'
             }
-            if (-not $VerbosePreference) {
-                $opts += '--quiet'
+            $opts += 'pack', $_, '--configuration', $Configuration
+
+            if ($Output) {
+                $opts += '--output', (Join-Path $Output (Split-Path $_ -Leaf))
             }
 
-            Verbose-Log "dnu $opts"
-            &dnu $opts 2>&1
+            if($BuildLabel -ne 'Release') {
+                $opts += '--version-suffix', "${BuildLabel}-${BuildNumber}"
+            }
+            $opts += '--serviceable'
+
+            Trace-Log "$DotNetExe $opts"
+
+            & $DotNetExe $opts
+
             if (-not $?) {
                 Error-Log "Pack failed @""$_"". Code: $LASTEXITCODE"
             }
@@ -434,25 +436,89 @@ Function Invoke-DnuPack {
     End { }
 }
 
-Function Build-Projects {
-    [CmdletBinding()]
-    param(
-        [string]$Configuration = $DefaultConfiguration,
-        [string]$BuildLabel = $DefaultReleaseLabel,
-        [int]$BuildNumber = (Get-BuildNumber),
-        [switch]$SkipRestore
-    )
-    # test code is not built here
-    $projectsLocation = Join-Path $RepoRoot src
 
-    if (-not $SkipRestore) {
-        Restore-Projects $projectsLocation
-    }
+# Function Invoke-DnuPack {
+#     [CmdletBinding()]
+#     param(
+#         [parameter(ValueFromPipeline=$True, Mandatory=$True, Position=0)]
+#         [string[]]$ProjectLocations,
+#         [Alias('config')]
+#         [string]$Configuration = $DefaultConfiguration,
+#         [Alias('label')]
+#         [string]$BuildLabel,
+#         [Alias('build')]
+#         [int]$BuildNumber,
+#         [Alias('out')]
+#         [string]$Output
+#     )
+#     Begin {
 
-    # dnu pack will build all nupkgs and place them in ./artifacts folder
-    $projects = Find-Projects $projectsLocation
-    $projects | Invoke-DnuPack -config $Configuration -label $BuildLabel -build $BuildNumber -out $ArtifactsFolder
-}
+#         [string]$paddedBuildNumber = Format-BuildNumber $BuildNumber
+
+#         # In project.json we could have: { "version": "1.0.0-*", ...}
+#         # If you set the DNX_BUILD_VERSION environment variable, it
+#         # will replace the -* with -{DNX_BUILD_VERSION}.
+#         # Setting the DNX build version (This will make a pre-release SemVer:
+#         # 1.0.0-* will become 1.0.0-{PrereleaseTag}-{BuildNumber})
+#         if($PrereleaseTag -ne 'Release') {
+#             $env:DNX_BUILD_VERSION="${PrereleaseTag}-${paddedBuildNumber}"
+#         }
+
+#         # Setting the DNX AssemblyFileVersion
+#         $env:DNX_ASSEMBLY_FILE_VERSION=$paddedBuildNumber
+
+#         # TODO: Investigate DNX_BUILD_PORTABLE_PDB envvar (See https://github.com/aspnet/dnx/pull/2609)
+
+#         # TODO: We need to put git-sha (commit-id) into dnu pack????
+
+#         # TODO: Investigate source indexing pdb files with git commit-id
+
+#         # For project.json as { "version": "1.0.0-*", ...}, together with label='build'
+#         # and build=12345, the end result is something equivalent to:
+#         #  [assembly: AssemblyVersion("1.0.0.0")]
+#         #  [assembly: AssemblyFileVersion("1.0.0.12345")]
+#         #  [assembly: AssemblyInformationalVersion("1.0.0-build-12345")]
+#     }
+#     Process {
+#         $ProjectLocations | %{
+#             $opts = , 'pack'
+#             $opts += $_
+#             $opts += '--configuration', $Configuration
+#             if ($Output) {
+#                 $opts += '--out', (Join-Path $Output (Get-FileName $_))
+#             }
+#             if (-not $VerbosePreference) {
+#                 $opts += '--quiet'
+#             }
+
+#             Verbose-Log "dnu $opts"
+#             &dnu $opts 2>&1
+#             if (-not $?) {
+#                 Error-Log "Pack failed @""$_"". Code: $LASTEXITCODE"
+#             }
+#         }
+#     }
+#     End { }
+# }
+
+# Function Build-Projects {
+#     [CmdletBinding()]
+#     param(
+#         [string]$Configuration = $DefaultConfiguration,
+#         [string]$BuildLabel = $DefaultReleaseLabel,
+#         [int]$BuildNumber = (Get-BuildNumber),
+#         [switch]$SkipRestore
+#     )
+
+
+#     if (-not $SkipRestore) {
+#         Restore-Projects $projectsLocation
+#     }
+
+#     # dnu pack will build all nupkgs and place them in ./artifacts folder
+#     $projects = Find-XProjects $projectsLocation
+#     $projects | Invoke-DnuPack -config $Configuration -label $BuildLabel -build $BuildNumber -out $ArtifactsFolder
+# }
 
 Function Test-Projects {
     [CmdletBinding()]
@@ -465,7 +531,7 @@ Function Test-Projects {
         Restore-Projects $projectsLocation
     }
 
-    $xtests = Find-Projects $projectsLocation
+    $xtests = Find-XProjects $projectsLocation
     $xtests | Test-Project
 }
 
