@@ -1,31 +1,7 @@
 #
 # Credit goes to Nuget.Client (See https://github.com/NuGet/NuGet.Client/blob/dev/build/common.ps1)
 #
-
-Function Get-FileName {
-    param([string]$path)
-    Split-Path -Path $path -Leaf
-}
-
-Function Get-DirName {
-    param([string]$path)
-    Split-Path -Path $path -Parent
-}
-
-Function Test-Dir {
-    param([string]$path)
-    Test-Path -PathType Container -Path $path
-}
-
-Function Test-File {
-    param([string]$path)
-    Test-Path -PathType Leaf -Path $path
-}
-
-Function Create-Dir {
-    param([string]$path)
-    New-Item -ItemType directory -Path $path
-}
+. "$PSScriptRoot\filesystem.ps1"
 
 ### Constants ###
 
@@ -43,30 +19,9 @@ $DotNetCliFolder = Join-Path $RepoRoot '.dotnetcli'
 $DotNetExe = Join-Path $DotNetCliFolder 'dotnet.exe'
 
 $MSBuildRoot = Join-Path ${env:ProgramFiles(x86)} 'MSBuild\'
-#$MSBuildExeRelPath = 'bin\msbuild.exe'
 
 $NuGetFolder = Join-Path $RepoRoot '.nuget'
 $NuGetExe = Join-Path $NuGetFolder 'nuget.exe'
-
-#$XunitConsole = Join-Path $NuGetClientRoot 'packages\xunit.runner.console.2.1.0\tools\xunit.console.exe'
-#$ILMerge = Join-Path $NuGetClientRoot 'packages\ILMerge.2.14.1208\tools\ILMerge.exe'
-
-Set-Alias dotnet $DotNetExe
-Set-Alias nuget $NuGetExe
-#Set-Alias xunit $XunitConsole
-#Set-Alias ilmerge $ILMerge
-
-# TODO: We probably don't need <add key="BuildFeed" value="Nupkgs" /> in our
-# Nuget.config, so delete BuildFeed below
-Function Read-PackageSources {
-    param($NuGetConfig)
-    $xml = New-Object xml
-    $xml.Load($NuGetConfig)
-    $xml.SelectNodes('/configuration/packageSources/add') | `
-        ? { $_.key -ne "BuildFeed" } | `
-        % { $_.value }
-}
-$PackageSources = Read-PackageSources (Join-Path $RepoRoot 'NuGet.Config')
 
 ### Functions ###
 
@@ -97,6 +52,20 @@ $Global:LastTraceTime = Get-Date
 
 Function Format-ElapsedTime($ElapsedTime) {
     '{0:F0}:{1:D2}' -f $ElapsedTime.TotalMinutes, $ElapsedTime.Seconds
+}
+
+# Local builds will generate a build number based on the 'duration' since semantic version date
+Function Get-BuildNumber() {
+    $SemanticVersionDate = '2015-11-30'
+    [int](((Get-Date) - (Get-Date $SemanticVersionDate)).TotalMinutes / 5)
+}
+
+# D5 means 'pad left with 00000', 1 -> '00001', 2 -> '00002' etc.
+Function Format-BuildNumber([int]$BuildNumber) {
+    if ($BuildNumber -gt 99999) {
+        Throw "Build number cannot be greater than 99999, because of Legacy SemVer limitations in Nuget."
+    }
+    '{0:D5}' -f $BuildNumber # Can handle 0001,...,99999 (this should be enough)
 }
 
 Function Invoke-BuildStep {
@@ -232,24 +201,33 @@ Function Install-DotnetCLI {
 # Get the sdk version from global.json
 Function Get-SdkVersionFromGlobalJson
 {
-    $repoRoot = Split-Path -Path $PSScriptRoot -Parent
-    $globalJson = join-path $repoRoot "global.json"
-    $jsonData = Get-Content -Path $globalJson -Raw | ConvertFrom-JSON
+    $jsonData = Get-GlobalJson
     return $jsonData.sdk.version
 }
 
-# Local builds will generate a build number based on the 'duration' since semantic version date
-Function Get-BuildNumber() {
-    $SemanticVersionDate = '2015-11-30'
-    [int](((Get-Date) - (Get-Date $SemanticVersionDate)).TotalMinutes / 5)
+# Get the directories referenced in the global.json file.
+Function Get-ProjectsFromGlobalJson
+{
+    $jsonData = Get-GlobalJson
+    return $jsonData.projects
 }
 
-# D5 means 'pad left with 00000', 1 -> '00001', 2 -> '00002' etc.
-Function Format-BuildNumber([int]$BuildNumber) {
-    if ($BuildNumber -gt 99999) {
-        Throw "Build number cannot be greater than 99999, because of Legacy SemVer limitations in Nuget."
+Function Get-GlobalJson
+{
+    $globalJson = join-path $RepoRoot "global.json"
+    $jsonData = Get-Content -Path $globalJson -Raw | ConvertFrom-JSON
+    return $jsonData
+}
+
+# dotnet clean is not supported in .NET Core 1.0 (see https://github.com/dotnet/cli/issues/16)
+# Clean the directories referenced in the global.json file.
+Function Clean-Compilation
+{
+    $projects = Get-ProjectsFromGlobalJson
+    $projects | %{Join-Path -Path $RepoRoot -ChildPath $_} | %{
+        Trace-Log "Cleaning: $_ recursively"
+        Get-ChildItem -Path $_ -Include bin,obj -Recurse | %{ Remove-Item $.Fullname –Recurse –Force}
     }
-    '{0:D5}' -f $BuildNumber # Can handle 0001,...,99999 (this should be enough)
 }
 
 # Remove all content inside ./artifacts folder
@@ -307,53 +285,18 @@ Function Restore-SolutionPackages{
     }
 }
 
-# Restore projects individually (dnu restore ../project.json -s sources)
-# Function Restore-Project {
-#     [CmdletBinding()]
-#     param(
-#         [parameter(ValueFromPipeline=$True, Mandatory=$True, Position=0)]
-#         [string[]]$ProjectLocations
-#     )
-#     Begin {}
-#     Process {
-#         $ProjectLocations | %{
-#             $projectJsonFile = Join-Path $_ 'project.json'
-#             $opts = 'restore', $projectJsonFile
-#             $opts += $PackageSources | %{ '-s', $_ }
-#             if (-not $VerbosePreference) {
-#                 $opts += '--quiet'
-#             }
-
-#             Trace-Log "Restoring packages @""$_"""
-#             Verbose-Log "dnu $opts"
-#             & dnu $opts 2>&1
-#             if (-not $?) {
-#                 Error-Log "Restore failed @""$_"". Code: $LASTEXITCODE"
-#             }
-#         }
-#     }
-#     End {}
-# }
-
-# Function Restore-Projects {
-#     [CmdletBinding()]
-#     param([string]$projectsLocation)
-
-#     $projects = Find-XProjects $projectsLocation
-#     $projects | Restore-Project
-# }
-
-Function Restore-XProjects($projectsLocation) {
+# dotnet restore
+Function Restore-Projects($projectFolder) {
 
     # The restore command is recursive (unlike the build and pack commands)
     # That is options can be a folder to recursively search for project.json files
-    $opts = 'restore', $projectsLocation
+    $opts = 'restore', $projectFolder
 
     if (-not $VerbosePreference) {
         $opts += '--verbosity', 'minimal'
     }
 
-    Trace-Log "Restoring packages for xprojs"
+    Trace-Log "Restoring packages"
     Trace-Log "$dotnetExe $opts"
 
     & $DotNetExe $opts
@@ -363,14 +306,29 @@ Function Restore-XProjects($projectsLocation) {
     }
 }
 
-# Find all paths to all folders with an xproj file
-Function Find-XProjects($projectsLocation) {
-    Get-ChildItem $projectsLocation -Recurse -Filter '*.xproj' |`
+# Find all paths to all folders with an xproj file (build, pack and test commands are not recursive)
+Function Find-XProjects($projectFolder) {
+    Get-ChildItem $projectFolder -Recurse -Filter '*.xproj' |`
         %{ Get-DirName $_.FullName }
 }
 
+Function Run-Tests {
+    [CmdletBinding()]
+    param(
+        [switch]$SkipRestore,
+        [string]$Configuration = $DefaultConfiguration
+    )
+
+    if (-not $SkipRestore) {
+        Restore-Projects $TestFolder
+    }
+
+    $xtests = Find-XProjects $TestFolder
+    $xtests | Test-Project -Configuration $Configuration
+}
+
 # Build production code
-Function Build-SrcProjects {
+Function Build-Packages {
     [CmdletBinding()]
     param(
         [string]$Configuration = $DefaultConfiguration,
@@ -380,13 +338,14 @@ Function Build-SrcProjects {
     )
 
     if (-not $SkipRestore) {
-        Restore-XProjects $SrcFolder
+        Restore-Projects $SrcFolder
     }
 
     $xprojects = Find-XProjects $SrcFolder
     $xprojects | Invoke-DotnetPack -config $Configuration -label $BuildLabel -build $BuildNumber -out $ArtifactsFolder
 }
 
+# dotnet pack
 Function Invoke-DotnetPack {
     [CmdletBinding()]
     param(
@@ -436,151 +395,38 @@ Function Invoke-DotnetPack {
     End { }
 }
 
-
-# Function Invoke-DnuPack {
-#     [CmdletBinding()]
-#     param(
-#         [parameter(ValueFromPipeline=$True, Mandatory=$True, Position=0)]
-#         [string[]]$ProjectLocations,
-#         [Alias('config')]
-#         [string]$Configuration = $DefaultConfiguration,
-#         [Alias('label')]
-#         [string]$BuildLabel,
-#         [Alias('build')]
-#         [int]$BuildNumber,
-#         [Alias('out')]
-#         [string]$Output
-#     )
-#     Begin {
-
-#         [string]$paddedBuildNumber = Format-BuildNumber $BuildNumber
-
-#         # In project.json we could have: { "version": "1.0.0-*", ...}
-#         # If you set the DNX_BUILD_VERSION environment variable, it
-#         # will replace the -* with -{DNX_BUILD_VERSION}.
-#         # Setting the DNX build version (This will make a pre-release SemVer:
-#         # 1.0.0-* will become 1.0.0-{PrereleaseTag}-{BuildNumber})
-#         if($PrereleaseTag -ne 'Release') {
-#             $env:DNX_BUILD_VERSION="${PrereleaseTag}-${paddedBuildNumber}"
-#         }
-
-#         # Setting the DNX AssemblyFileVersion
-#         $env:DNX_ASSEMBLY_FILE_VERSION=$paddedBuildNumber
-
-#         # TODO: Investigate DNX_BUILD_PORTABLE_PDB envvar (See https://github.com/aspnet/dnx/pull/2609)
-
-#         # TODO: We need to put git-sha (commit-id) into dnu pack????
-
-#         # TODO: Investigate source indexing pdb files with git commit-id
-
-#         # For project.json as { "version": "1.0.0-*", ...}, together with label='build'
-#         # and build=12345, the end result is something equivalent to:
-#         #  [assembly: AssemblyVersion("1.0.0.0")]
-#         #  [assembly: AssemblyFileVersion("1.0.0.12345")]
-#         #  [assembly: AssemblyInformationalVersion("1.0.0-build-12345")]
-#     }
-#     Process {
-#         $ProjectLocations | %{
-#             $opts = , 'pack'
-#             $opts += $_
-#             $opts += '--configuration', $Configuration
-#             if ($Output) {
-#                 $opts += '--out', (Join-Path $Output (Get-FileName $_))
-#             }
-#             if (-not $VerbosePreference) {
-#                 $opts += '--quiet'
-#             }
-
-#             Verbose-Log "dnu $opts"
-#             &dnu $opts 2>&1
-#             if (-not $?) {
-#                 Error-Log "Pack failed @""$_"". Code: $LASTEXITCODE"
-#             }
-#         }
-#     }
-#     End { }
-# }
-
-# Function Build-Projects {
-#     [CmdletBinding()]
-#     param(
-#         [string]$Configuration = $DefaultConfiguration,
-#         [string]$BuildLabel = $DefaultReleaseLabel,
-#         [int]$BuildNumber = (Get-BuildNumber),
-#         [switch]$SkipRestore
-#     )
-
-
-#     if (-not $SkipRestore) {
-#         Restore-Projects $projectsLocation
-#     }
-
-#     # dnu pack will build all nupkgs and place them in ./artifacts folder
-#     $projects = Find-XProjects $projectsLocation
-#     $projects | Invoke-DnuPack -config $Configuration -label $BuildLabel -build $BuildNumber -out $ArtifactsFolder
-# }
-
-Function Test-Projects {
-    [CmdletBinding()]
-    param(
-        [switch]$SkipRestore
-    )
-    $projectsLocation = Join-Path $RepoRoot test
-
-    if (-not $SkipRestore) {
-        Restore-Projects $projectsLocation
-    }
-
-    $xtests = Find-XProjects $projectsLocation
-    $xtests | Test-Project
-}
-
+# dotnet test
 Function Test-Project {
     [CmdletBinding()]
     param(
         [parameter(ValueFromPipeline=$True, Mandatory=$True, Position=0)]
-        [string[]]$ProjectLocations
+        [string[]]$XProjectLocations,
+        [string]$Configuration = $DefaultConfiguration
     )
-    Begin {
-        # Test assemblies should not be signed
-        if (Test-Path Env:\DNX_BUILD_KEY_FILE) {
-            Remove-Item Env:\DNX_BUILD_KEY_FILE
-        }
-
-        if (Test-Path Env:\DNX_BUILD_DELAY_SIGN) {
-            Remove-Item Env:\DNX_BUILD_DELAY_SIGN
-        }
-    }
+    Begin {}
     Process {
-        $ProjectLocations | %{
+        $XProjectLocations | Resolve-Path | %{
             Trace-Log "Running tests in ""$_"""
 
-            $opts = '-p', $_, 'test'
+            $directoryName = Split-Path $_ -Leaf
+
+            Push-Location $_
+
+            $opts = @()
             if ($VerbosePreference) {
-                $opts += '-diagnostics', '-verbose'
+                $opts += '-v'
             }
-            else {
-                $opts += '-nologo', '-quiet'
-            }
-            Verbose-Log "dnx $opts"
+            $opts += 'test', '--configuration', $Configuration
 
-            # Check if dnxcore50 exists in the project.json file
-            $xtestProjectJson = Join-Path $_ "project.json"
-            if (Get-Content $($xtestProjectJson) | Select-String "dnxcore50") {
-                # Run tests for CoreCLR-x64 (New .NET Core 1.0, 64 bit windows)
-                Use-DNX -u -r CoreCLR -a x64
-                & dnx $opts 2>&1
-                if (-not $?) {
-                    Error-Log "Tests failed @""$_"" on CoreCLR. Code: $LASTEXITCODE"
-                }
-            }
+            Trace-Log "$DotNetExe $opts"
 
-            # Run tests for CLR-x64 (Classic .NET Framework 4.x, 64 bit windows)
-            Use-DNX -u -r CLR -a x64
-            & dnx $opts 2>&1
+            & $DotNetExe $opts
+
             if (-not $?) {
-                Error-Log "Tests failed @""$_"" on CLR. Code: $LASTEXITCODE"
+                Error-Log "Tests failed @""$_"" on .NET Core. Code: $LASTEXITCODE"
             }
+
+            Pop-Location
         }
     }
     End {}

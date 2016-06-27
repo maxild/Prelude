@@ -38,14 +38,8 @@ trap
 
 . "$PSScriptRoot\build\common.ps1"
 
-#$RunTests = (-not $SkipTests) -and (-not $Fast)
-
-# Adjust version skipping if only one version installed - if Dev15 is not installed, no need to specify SkipDev15
-# $Dev14Installed = Test-MSBuildVersionPresent -MSBuildVersion "14"
-# $SkipDev14 = $SkipDev14 -or -not $Dev14Installed
-
-# $Dev15Installed = Test-MSBuildVersionPresent -MSBuildVersion "15"
-# $SkipDev15 = $SkipDev15 -or -not $Dev15Installed
+Clean-Compilation
+return
 
 # Write prologue
 Write-Host ("`r`n" * 3)
@@ -77,21 +71,21 @@ Invoke-BuildStep 'Restoring solution packages' { Restore-SolutionPackages } `
     -skip:$SkipRestore `
     -ev +BuildErrors
 
-Invoke-BuildStep 'Building production projects' {
+Invoke-BuildStep 'Building packages' {
         param($Configuration, $BuildLabel, $BuildNumber, $SkipRestore, $Fast)
-        Build-SrcProjects $Configuration $BuildLabel $BuildNumber -SkipRestore:$SkipRestore
+        Build-Packages $Configuration $BuildLabel $BuildNumber -SkipRestore:$SkipRestore
     } `
     -args $Configuration, $PrereleaseTag, $BuildNumber, $SkipRestore `
     -ev +BuildErrors
 
-# Invoke-BuildStep 'Running tests' {
-#         param($SkipRestore)
-#         # This will build and execute all tests under the ./test folder
-#         Test-Projects -SkipRestore:$SkipRestore
-#     } `
-#     -args $SkipRestore `
-#     -skip:$SkipTests `
-#     -ev +BuildErrors
+Invoke-BuildStep 'Running tests' {
+        param($SkipRestore)
+        # This will build and execute all tests under the ./test folder
+        Run-Tests -SkipRestore:$SkipRestore
+    } `
+    -args $SkipRestore `
+    -skip:$SkipTests `
+    -ev +BuildErrors
 
 Pop-Location
 
