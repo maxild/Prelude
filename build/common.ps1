@@ -3,27 +3,28 @@
 #
 . "$PSScriptRoot\filesystem.ps1"
 
-### Constants ###
-
 $ValidConfigurations = 'debug', 'release'
 $DefaultConfiguration = 'debug'
 $ValidBuildLabels = 'Release','rtm', 'rc', 'beta', 'local' # TODO: Not used!!
 $DefaultBuildLabel = 'local'
 
+# project tree
 $RepoRoot = Get-DirName $PSScriptRoot
 $ArtifactsFolder = Join-Path $RepoRoot 'artifacts'
 $SrcFolder = Join-Path $RepoRoot 'src'
 $TestFolder = Join-Path $RepoRoot 'test'
 
+# restore, build, pack, test
 $DotNetCliFolder = Join-Path $RepoRoot '.dotnetcli'
 $DotNetExe = Join-Path $DotNetCliFolder 'dotnet.exe'
 
-$MSBuildRoot = Join-Path ${env:ProgramFiles(x86)} 'MSBuild\'
-
+# Clear-PackageCache, Restore-SolutionPackages
 $NuGetFolder = Join-Path $RepoRoot '.nuget'
 $NuGetExe = Join-Path $NuGetFolder 'nuget.exe'
 
-### Functions ###
+# The following aliases will update nuget and dotnet for the powershell session
+Set-Alias dotnet $DotNetExe
+Set-Alias nuget $NuGetExe
 
 Function Trace-Log($TraceMessage = '') {
     Write-Host "[$(Trace-Time)]`t$TraceMessage" -ForegroundColor Cyan
@@ -47,7 +48,6 @@ Function Trace-Time() {
     $Global:LastTraceTime = $currentTime
     "{0:HH:mm:ss} +{1:F0}" -f $currentTime, ($currentTime - $lastTime).TotalSeconds
 }
-
 $Global:LastTraceTime = Get-Date
 
 Function Format-ElapsedTime($ElapsedTime) {
@@ -115,34 +115,53 @@ Function Test-MSBuildVersionPresent {
         [string]$MSBuildVersion
     )
 
-    $MSBuildExe = Get-MSBuildExe $MSBuildVersion
-    Test-Path $MSBuildExe
+    $MSBuildExePath = Get-MSBuildExePath $MSBuildVersion
+    Test-Path $MSBuildExePath
 }
 
-Function Get-MSBuildExe {
+Function Get-MSBuildExePath {
     param(
         [string]$MSBuildVersion
     )
 
-    $MSBuildExe = Join-Path $MSBuildRoot ($MSBuildVersion + ".0")
-    Join-Path $MSBuildExe $MSBuildExeRelPath
+    Join-Path ${env:ProgramFiles(x86)} 'MSBuild\' | `
+    Join-Path -ChildPath ($MSBuildVersion + ".0") | `
+    Join-Path -ChildPath 'bin' | `
+    Join-Path -ChildPath 'msbuild.exe'
 }
 
-# Downloads NuGet.exe if missing
 Function Install-NuGet {
     [CmdletBinding()]
     param(
-        [string] $NugetVersion = "latest-prerelease"
+        [switch]$Prerelease
     )
 
     # Create .nuget folder if necessary
     New-Item -ItemType Directory -Force -Path $NuGetFolder | Out-Null
 
-    # TODO: What about self-updating???
+    if ($Prerelease) {
+        $NugetVersion = 'latest-prerelease'
+    }
+    else {
+        $NugetVersion = 'latest'
+    }
+
     if (-not (Test-File $NuGetExe)) {
-        Trace-Log 'Downloading nuget.exe'
+        Trace-Log "Downloading $NugetVersion of nuget.exe."
         Invoke-WebRequest "https://dist.nuget.org/win-x86-commandline/$NugetVersion/nuget.exe" -OutFile $NuGetExe
     }
+    else {
+        Trace-Log "nuget.exe have already been downloaded. Updating to $NugetVersion."
+        $opts = 'update', '-Self'
+        if ($Prerelease) {
+            $opts += '-Prerelease'
+        }
+        Trace-Log "$NuGetExe $opts"
+        & $NuGetExe $opts
+    }
+
+    # Display version (nuget --version does not exist)
+    & $NuGetExe help | select -first 1 | Out-Default
 }
 
 # Note: The official RC2 MSI installer (DotNetCore.1.0.0.RC2-SDK.Preview1-x64.exe) will
@@ -195,7 +214,10 @@ Function Install-DotnetCLI {
     }
 
     # Display build info
-    & $DotNetExe --info
+    #& $DotNetExe --info
+
+    # Display version
+    & $DotNetExe --version
 }
 
 # Get the sdk version from global.json
@@ -205,7 +227,9 @@ Function Get-SdkVersionFromGlobalJson
     return $jsonData.sdk.version
 }
 
-# Get the directories referenced in the global.json file.
+# Get the projects from global.json.
+# Note: Build system will search for projects in the
+# directories specified here when resolving dependencies.
 Function Get-ProjectsFromGlobalJson
 {
     $jsonData = Get-GlobalJson
@@ -221,12 +245,13 @@ Function Get-GlobalJson
 
 # dotnet clean is not supported in .NET Core 1.0 (see https://github.com/dotnet/cli/issues/16)
 # Clean the directories referenced in the global.json file.
-Function Clean-Compilation
+Function Clean-Projects
 {
     $projects = Get-ProjectsFromGlobalJson
     $projects | %{Join-Path -Path $RepoRoot -ChildPath $_} | %{
         Trace-Log "Cleaning: $_ recursively"
-        Get-ChildItem -Path $_ -Include bin,obj -Recurse | %{ Remove-Item $.Fullname –Recurse –Force}
+        Get-ChildItem -Path $_ -Include bin,obj -Recurse | `
+        %{ Remove-Item $_.FullName -Recurse -Force }
     }
 }
 
@@ -248,10 +273,10 @@ Function Clear-PackageCache {
     # Possible caches to clear are:
     #   all | http-cache | packages-cache | global-packages | temp
 
-    #& nuget locals http-cache -clear -verbosity detailed
-    & nuget locals packages-cache -clear -verbosity detailed
-    #& nuget locals global-packages -clear -verbosity detailed
-    & nuget locals temp -clear -verbosity detailed
+    #& $NuGetExe locals http-cache -clear -verbosity detailed
+    & $NuGetExe locals packages-cache -clear -verbosity detailed
+    #& $NuGetExe locals global-packages -clear -verbosity detailed
+    & $NuGetExe locals temp -clear -verbosity detailed
 }
 
 Function Restore-SolutionPackages{

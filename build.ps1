@@ -38,8 +38,9 @@ trap
 
 . "$PSScriptRoot\build\common.ps1"
 
-Clean-Compilation
-return
+# TODO: Use Psake
+# Clean-Projects
+#return
 
 # Write prologue
 Write-Host ("`r`n" * 3)
@@ -61,7 +62,7 @@ Invoke-BuildStep 'Cleaning package cache' { Clear-PackageCache } `
     -skip:(-not $CleanCache) `
     -ev +BuildErrors
 
-Invoke-BuildStep 'Installing NuGet.exe' { Install-NuGet } `
+Invoke-BuildStep 'Installing NuGet.exe' { Install-NuGet -Prerelease } `
     -ev +BuildErrors
 
 Invoke-BuildStep 'Installing dotnet CLI' { Install-DotnetCLI } `
