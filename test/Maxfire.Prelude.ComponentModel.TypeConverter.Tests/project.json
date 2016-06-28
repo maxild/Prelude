@@ -1,4 +1,4 @@
-﻿{
+{
     "version": "1.0.0-*",
     "dependencies": {
         "xunit": "2.1.0",
@@ -21,14 +21,14 @@
             ],
             "dependencies": {
                 "Microsoft.NETCore.App": {
-                    "version": "1.0.0-rc2-3002702",
+                    "version": "1.0.0",
                     "type": "platform"
                 }
             }
         },
         "net46": {
             "dependencies": {
-                "Microsoft.NETCore.Platforms": "1.0.1-rc2-24027"
+                "Microsoft.NETCore.Platforms": "1.0.1"
             }
         }
     }
