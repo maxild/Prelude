@@ -14,6 +14,11 @@ $ArtifactsFolder = Join-Path $RepoRoot 'artifacts'
 $SrcFolder = Join-Path $RepoRoot 'src'
 $TestFolder = Join-Path $RepoRoot 'test'
 
+# SDK versions
+#$DefaultDotNetCliVersion = 'Latest'
+#$DefaultDotNetCliVersion = '1.0.0-preview1-002702' #preview1 part of RC2 bits
+$DefaultDotNetCliVersion = '1.0.0-preview2-003121' #preview2
+
 # restore, build, pack, test
 $DotNetCliFolder = Join-Path $RepoRoot '.dotnetcli'
 $DotNetExe = Join-Path $DotNetCliFolder 'dotnet.exe'
@@ -23,7 +28,8 @@ $NuGetFolder = Join-Path $RepoRoot '.nuget'
 $NuGetExe = Join-Path $NuGetFolder 'nuget.exe'
 
 # The following aliases will update nuget and dotnet for the powershell session
-Set-Alias dotnet $DotNetExe
+# All commands executed in this script will use the aliases
+#Set-Alias dotnet $DotNetExe #uncomment when Install-DotnetCLI works with pinned preview2 version
 Set-Alias nuget $NuGetExe
 
 Function Trace-Log($TraceMessage = '') {
@@ -166,10 +172,31 @@ Function Install-NuGet {
 
 # Note: The official RC2 MSI installer (DotNetCore.1.0.0.RC2-SDK.Preview1-x64.exe) will
 #       install version 1.0.0-preview1-002702
+# Note: I prefer sdk binaries (zip, gzip) instead of sdk installer (exe, msi, pkg), because then it
+# is easier to reproduce locally (.NET Core SDK = .NET Core + CLI tools). SxS install is
+# possible by design (See https://github.com/dotnet/cli#installers)
+# See also https://www.microsoft.com/net/download and https://github.com/dotnet/cli#installers-and-binaries
+# for download options
+#               1) SDK Installers (machine wide install)
+#               2) SDK Binaries (SxS support)
+#               3) Daily and continuous integration builds of .NET Core (github)
+#
+# AzureFeed = https://dotnetcli.blob.core.windows.net/dotnet
+# Channel = rel-1.0.0
+#  {AzureFeed}/sdk/{Channel}/latest.version => VersionInfo = (hash, version) (dotnet --info)
+#
+# Download link for SDK:
+#  {AzureFeed}/Sdk/{SpecificVersion}/dotnet-dev-win-{CLIArchitecture}.{SpecificVersion}.zip
+#  Example: https://dotnetcli.blob.core.windows.net/dotnet/Sdk/1.0.0-preview2-003121/dotnet-dev-win-x64.1.0.0-preview2-003121.zip
+#  Example: https://dotnetcli.blob.core.windows.net/dotnet/Sdk/1.0.0-preview3-003171/dotnet-dev-win-x64.1.0.0-preview3-003171.zip
+#
+#  Issue:
+#  https://dotnetcli.blob.core.windows.net/dotnet/Sdk/1.0.0-preview2-003121/dotnet-dev-win-x64.1.0.0-preview2-003121.zip => 404
+#  https://download.microsoft.com/download/1/5/2/1523EBE1-3764-4328-8961-D1BD8ECA9295/dotnet-dev-win-x64.1.0.0-preview2-003121.zip
 Function Install-DotnetCLI {
     [CmdletBinding()]
     param(
-        [string] $CLIVersion = "1.0.0-preview2-003030"
+        [string] $CLIVersion = $DefaultDotNetCliVersion
     )
 
     Trace-Log 'Downloading Dotnet CLI'
@@ -179,8 +206,8 @@ Function Install-DotnetCLI {
 
     # Windows .NET Core search paths:
     #   1) %DOTNET_HOME%
-    #   2) %LOCALAPPDATA%\Microsoft\dotnet (this is where install.ps1 installs by default)
-    #   3) %ProgramFiles%\dotnet (Windows MSI installer)
+    #   2) %LOCALAPPDATA%\Microsoft\dotnet (this is where dotnet-install.ps1 installs by default...SxS)
+    #   3) %ProgramFiles%\dotnet (Windows MSI installer...machine wide)
     #
     # Unix???
     #   1) $DOTNET_HOME
@@ -207,7 +234,8 @@ Function Install-DotnetCLI {
     Invoke-WebRequest 'https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0/scripts/obtain/dotnet-install.ps1' -OutFile $DotNetInstallScript
 
     # Install a pre-release stable (preview) version
-    & $DotNetInstallScript -Channel preview -i $DotNetCliFolder -Version $CLIVersion
+    & $DotNetInstallScript -Channel preview -InstallDir $DotNetCliFolder -Version $CLIVersion -NoPath
+    #& $DotNetInstallScript -InstallDir $DotNetCliFolder -NoPath
 
     if (-not (Test-Path $DotNetExe)) {
         Error-Log "Unable to find dotnet.exe. The CLI install may have failed." -Fatal
@@ -273,10 +301,10 @@ Function Clear-PackageCache {
     # Possible caches to clear are:
     #   all | http-cache | packages-cache | global-packages | temp
 
-    #& $NuGetExe locals http-cache -clear -verbosity detailed
-    & $NuGetExe locals packages-cache -clear -verbosity detailed
-    #& $NuGetExe locals global-packages -clear -verbosity detailed
-    & $NuGetExe locals temp -clear -verbosity detailed
+    #& nuget locals http-cache -clear -verbosity detailed
+    & nuget locals packages-cache -clear -verbosity detailed
+    #& nuget locals global-packages -clear -verbosity detailed
+    & nuget locals temp -clear -verbosity detailed
 }
 
 Function Restore-SolutionPackages{
@@ -303,8 +331,8 @@ Function Restore-SolutionPackages{
     }
 
     Trace-Log "Restoring packages @""$RepoRoot"""
-    Trace-Log "$NuGetExe $opts"
-    & $NuGetExe $opts
+    Trace-Log "nuget $opts"
+    & nuget $opts
     if (-not $?) {
         Error-Log "Restore failed @""$RepoRoot"". Code: ${LASTEXITCODE}"
     }
@@ -322,9 +350,9 @@ Function Restore-Projects($projectFolder) {
     }
 
     Trace-Log "Restoring packages"
-    Trace-Log "$dotnetExe $opts"
+    Trace-Log "dotnet $opts"
 
-    & $DotNetExe $opts
+    & dotnet $opts
 
     if (-not $?) {
         Error-Log "Restore failed @""$_"". Code: $LASTEXITCODE"
@@ -408,9 +436,9 @@ Function Invoke-DotnetPack {
             }
             $opts += '--serviceable'
 
-            Trace-Log "$DotNetExe $opts"
+            Trace-Log "dotnet $opts"
 
-            & $DotNetExe $opts
+            & dotnet $opts
 
             if (-not $?) {
                 Error-Log "Pack failed @""$_"". Code: $LASTEXITCODE"
@@ -443,9 +471,9 @@ Function Test-Project {
             }
             $opts += 'test', '--configuration', $Configuration
 
-            Trace-Log "$DotNetExe $opts"
+            Trace-Log "dotnet $opts"
 
-            & $DotNetExe $opts
+            & dotnet $opts
 
             if (-not $?) {
                 Error-Log "Tests failed @""$_"" on .NET Core. Code: $LASTEXITCODE"
