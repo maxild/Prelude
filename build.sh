@@ -10,6 +10,8 @@ done
 
 RESULTCODE=0
 
+configuration="release"
+
 rootFolder=$(dirname "${BASH_SOURCE}")
 artifactsFolder="./artifacts"
 
@@ -72,16 +74,16 @@ do
 
     # Ideally we would use the 'dotnet test' command to test both netcoreapp1.0 and net46,
     # but this currently doesn't work due to https://github.com/dotnet/cli/issues/3073
-	echo "dotnet test $testDir --configuration release --framework netcoreapp1.0"
-	$DOTNET test $testDir --configuration release --framework netcoreapp1.0
+	echo "dotnet test $testDir --configuration $configuration --framework netcoreapp1.0"
+	$DOTNET test $testDir --configuration $configuration --framework netcoreapp1.0
 
     # Instead, build with .NET Core SDK (dotnet build)... 
-    echo "dotnet build $testDir --configuration release --framework net46"
-	$DOTNET build $testDir --configuration release --framework net46
+    echo "dotnet build $testDir --configuration $configuration --framework net46"
+	$DOTNET build $testDir --configuration $configuration --framework net46
 
     # ..., and run xUnit.net .NET CLI test runner directly with mono for the full/desktop .net version
-    echo "mono ./bin/release/net46/*/dotnet-test-xunit.exe ./bin/release/net46/*/$testProjectName.dll"
-    mono $testDir/bin/Release/net46/*/dotnet-test-xunit.exe $testDir/bin/Release/net46/*/$testProjectName.dll
+    echo "mono ./bin/$configuration/net46/*/dotnet-test-xunit.exe ./bin/$configuration/net46/*/$testProjectName.dll"
+    mono $testDir/bin/$configuration/net46/*/dotnet-test-xunit.exe $testDir/bin/$configuration/net46/*/$testProjectName.dll
 
 	popd
 
@@ -106,7 +108,7 @@ do
     echo "Build package for $srcProjectName"
     echo "================="
     
-    echo "dotnet pack $srcDir -c release -o $artifactsFolder --version-suffix=$revision"
-    $DOTNET pack $srcDir -c release -o $artifactsFolder --version-suffix=$revision  
+    echo "dotnet pack $srcDir -c $configuration -o $artifactsFolder --version-suffix=$revision"
+    $DOTNET pack $srcDir -c $configuration -o $artifactsFolder --version-suffix=$revision  
 
 done
