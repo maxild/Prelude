@@ -44,13 +44,13 @@ trap
 
 # Write prologue
 Write-Host ("`r`n" * 3)
-Trace-Log ('=' * 60)
+Say ('=' * 60)
 
 $startTime = [DateTime]::UtcNow
 if (-not $BuildNumber) {
     $BuildNumber = Get-BuildNumber
 }
-Trace-Log "Build #$BuildNumber started at $startTime"
+Say "Build #$BuildNumber started at $startTime"
 
 Push-Location $RepoRoot
 
@@ -74,7 +74,8 @@ Invoke-BuildStep 'Restoring solution packages' { Restore-SolutionPackages } `
 
 Invoke-BuildStep 'Building packages' {
         param($Configuration, $BuildLabel, $BuildNumber, $SkipRestore, $Fast)
-        Build-Packages $Configuration $BuildLabel $BuildNumber -SkipRestore:$SkipRestore
+        # This will build and package all production code under ./src folder
+        BuildPackages $Configuration $BuildLabel $BuildNumber -SkipRestore:$SkipRestore
     } `
     -args $Configuration, $PrereleaseTag, $BuildNumber, $SkipRestore `
     -ev +BuildErrors
@@ -82,7 +83,7 @@ Invoke-BuildStep 'Building packages' {
 Invoke-BuildStep 'Running tests' {
         param($SkipRestore)
         # This will build and execute all tests under the ./test folder
-        Run-Tests -SkipRestore:$SkipRestore
+        RunTests -SkipRestore:$SkipRestore
     } `
     -args $SkipRestore `
     -skip:$SkipTests `
@@ -91,19 +92,19 @@ Invoke-BuildStep 'Running tests' {
 Pop-Location
 
 # Write epilogue
-Trace-Log ('-' * 60)
+Say ('-' * 60)
 
 # TODO: Use stopwatch
 $endTime = [DateTime]::UtcNow
-Trace-Log "Build #$BuildNumber ended at $endTime"
-Trace-Log "Time elapsed $(Format-ElapsedTime ($endTime - $startTime))"
+Say "Build #$BuildNumber ended at $endTime"
+Say "Time elapsed $(Format-ElapsedTime ($endTime - $startTime))"
 
 if ($BuildErrors) {
-    Trace-Log "Build's completed with following errors:"
+    Say "Build's completed with following errors:"
     $BuildErrors | Out-Default
 }
 
-Trace-Log ('=' * 60)
+Say ('=' * 60)
 
 if ($BuildErrors) {
     Throw $BuildErrors.Count

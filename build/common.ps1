@@ -3,9 +3,9 @@
 #
 . "$PSScriptRoot\filesystem.ps1"
 
-$ValidConfigurations = 'debug', 'release'
+#$ValidConfigurations = 'debug', 'release'
 $DefaultConfiguration = 'debug'
-$ValidBuildLabels = 'Release','rtm', 'rc', 'beta', 'local' # TODO: Not used!!
+#$ValidBuildLabels = 'Release','rtm', 'rc', 'beta', 'local' # TODO: Not used!!
 $DefaultBuildLabel = 'local'
 
 # project tree
@@ -32,29 +32,29 @@ $NuGetExe = Join-Path $NuGetFolder 'nuget.exe'
 #Set-Alias dotnet $DotNetExe #uncomment when Install-DotnetCLI works with pinned preview2 version
 Set-Alias nuget $NuGetExe
 
-Function Trace-Log($TraceMessage = '') {
-    Write-Host "[$(Trace-Time)]`t$TraceMessage" -ForegroundColor Cyan
+Function Say($SayMessage = '') {
+    Write-Host "[$(SayTime)]`t$SayMessage" -ForegroundColor Cyan
 }
 
-Function Verbose-Log($VerboseMessage) {
-    Write-Verbose "[$(Trace-Time)]`t$VerboseMessage"
+Function SayVerbose($VerboseMessage) {
+    Write-Verbose "[$(SayTime)]`t$VerboseMessage"
 }
 
-Function Error-Log($ErrorMessage) {
-    Write-Error "[$(Trace-Time)]`t$ErrorMessage"
+Function SayError($ErrorMessage) {
+    Write-Error "[$(SayTime)]`t$ErrorMessage"
 }
 
-Function Warning-Log($WarningMessage) {
-    Write-Warning "[$(Trace-Time)]`t$WarningMessage"
+Function SayWarning($WarningMessage) {
+    Write-Warning "[$(SayTime)]`t$WarningMessage"
 }
 
-Function Trace-Time() {
+Function SayTime() {
     $currentTime = Get-Date
-    $lastTime = $Global:LastTraceTime
-    $Global:LastTraceTime = $currentTime
+    $lastTime = $Global:LastSayTime
+    $Global:LastSayTime = $currentTime
     "{0:HH:mm:ss} +{1:F0}" -f $currentTime, ($currentTime - $lastTime).TotalSeconds
 }
-$Global:LastTraceTime = Get-Date
+$Global:LastSayTime = Get-Date
 
 Function Format-ElapsedTime($ElapsedTime) {
     '{0:F0}:{1:D2}' -f $ElapsedTime.TotalMinutes, $ElapsedTime.Seconds
@@ -88,7 +88,7 @@ Function Invoke-BuildStep {
         [switch]$SkipExecution
     )
     if (-not $SkipExecution) {
-        Trace-Log "[BEGIN] $BuildStep"
+        Say "[BEGIN] $BuildStep"
         $sw = [Diagnostics.Stopwatch]::StartNew()
         $completed = $false
         try {
@@ -98,20 +98,20 @@ Function Invoke-BuildStep {
         finally {
             $sw.Stop()
             if ($completed) {
-                Trace-Log "[DONE +$(Format-ElapsedTime $sw.Elapsed)] $BuildStep"
+                Say "[DONE +$(Format-ElapsedTime $sw.Elapsed)] $BuildStep"
             }
             else {
                 if (-not $err) {
-                    Trace-Log "[STOPPED +$(Format-ElapsedTime $sw.Elapsed)] $BuildStep"
+                    Say "[STOPPED +$(Format-ElapsedTime $sw.Elapsed)] $BuildStep"
                 }
                 else {
-                    Error-Log "[FAILED +$(Format-ElapsedTime $sw.Elapsed)] $BuildStep"
+                    SayError "[FAILED +$(Format-ElapsedTime $sw.Elapsed)] $BuildStep"
                 }
             }
         }
     }
     else {
-        Warning-Log "[SKIP] $BuildStep"
+        SayWarning "[SKIP] $BuildStep"
     }
 }
 
@@ -153,16 +153,16 @@ Function Install-NuGet {
     }
 
     if (-not (Test-File $NuGetExe)) {
-        Trace-Log "Downloading $NugetVersion of nuget.exe."
+        Say "Downloading $NugetVersion of nuget.exe."
         Invoke-WebRequest "https://dist.nuget.org/win-x86-commandline/$NugetVersion/nuget.exe" -OutFile $NuGetExe
     }
     else {
-        Trace-Log "nuget.exe have already been downloaded. Updating to $NugetVersion."
+        Say "nuget.exe have already been downloaded. Updating to $NugetVersion."
         $opts = 'update', '-Self'
         if ($Prerelease) {
             $opts += '-Prerelease'
         }
-        Trace-Log "$NuGetExe $opts"
+        Say "$NuGetExe $opts"
         & $NuGetExe $opts
     }
 
@@ -199,7 +199,7 @@ Function Install-DotnetCLI {
         [string] $CLIVersion = $DefaultDotNetCliVersion
     )
 
-    Trace-Log 'Downloading Dotnet CLI'
+    Say 'Downloading Dotnet CLI'
 
     # create .dotnetcli subfolder if necessary
     New-Item -ItemType Directory -Force -Path $DotNetCliFolder | Out-Null
@@ -238,7 +238,7 @@ Function Install-DotnetCLI {
     #& $DotNetInstallScript -InstallDir $DotNetCliFolder -NoPath
 
     if (-not (Test-Path $DotNetExe)) {
-        Error-Log "Unable to find dotnet.exe. The CLI install may have failed." -Fatal
+        SayError "Unable to find dotnet.exe. The CLI install may have failed." -Fatal
     }
 
     # Display build info
@@ -273,11 +273,11 @@ Function Get-GlobalJson
 
 # dotnet clean is not supported in .NET Core 1.0 (see https://github.com/dotnet/cli/issues/16)
 # Clean the directories referenced in the global.json file.
-Function Clean-Projects
+Function Clear-BinObjFolders
 {
     $projects = Get-ProjectsFromGlobalJson
     $projects | %{Join-Path -Path $RepoRoot -ChildPath $_} | %{
-        Trace-Log "Cleaning: $_ recursively"
+        Say "Cleaning: $_ recursively"
         Get-ChildItem -Path $_ -Include bin,obj -Recurse | `
         %{ Remove-Item $_.FullName -Recurse -Force }
     }
@@ -288,7 +288,7 @@ Function Clear-Artifacts {
     [CmdletBinding()]
     param()
     if (Test-Dir $ArtifactsFolder) {
-        Trace-Log 'Cleaning the Artifacts folder'
+        Say 'Cleaning the Artifacts folder'
         Remove-Item $ArtifactsFolder\* -Recurse -Force
     }
 }
@@ -296,7 +296,7 @@ Function Clear-Artifacts {
 Function Clear-PackageCache {
     [CmdletBinding()]
     param()
-    Trace-Log 'Cleaning package cache (except the web cache)'
+    Say 'Cleaning package cache (except the web cache)'
 
     # Possible caches to clear are:
     #   all | http-cache | packages-cache | global-packages | temp
@@ -330,11 +330,11 @@ Function Restore-SolutionPackages{
         $opts += '-verbosity', 'quiet'
     }
 
-    Trace-Log "Restoring packages @""$RepoRoot"""
-    Trace-Log "nuget $opts"
+    Say "Restoring packages @""$RepoRoot"""
+    Say "nuget $opts"
     & nuget $opts
     if (-not $?) {
-        Error-Log "Restore failed @""$RepoRoot"". Code: ${LASTEXITCODE}"
+        SayError "Restore failed @""$RepoRoot"". Code: ${LASTEXITCODE}"
     }
 }
 
@@ -349,13 +349,13 @@ Function Restore-Projects($projectFolder) {
         $opts += '--verbosity', 'minimal'
     }
 
-    Trace-Log "Restoring packages"
-    Trace-Log "dotnet $opts"
+    Say "Restoring packages"
+    Say "dotnet $opts"
 
     & dotnet $opts
 
     if (-not $?) {
-        Error-Log "Restore failed @""$_"". Code: $LASTEXITCODE"
+        SayError "Restore failed @""$_"". Code: $LASTEXITCODE"
     }
 }
 
@@ -365,7 +365,7 @@ Function Find-XProjects($projectFolder) {
         %{ Get-DirName $_.FullName }
 }
 
-Function Run-Tests {
+Function RunTests {
     [CmdletBinding()]
     param(
         [switch]$SkipRestore,
@@ -381,7 +381,7 @@ Function Run-Tests {
 }
 
 # Build production code
-Function Build-Packages {
+Function BuildPackages {
     [CmdletBinding()]
     param(
         [string]$Configuration = $DefaultConfiguration,
@@ -436,12 +436,12 @@ Function Invoke-DotnetPack {
             }
             $opts += '--serviceable'
 
-            Trace-Log "dotnet $opts"
+            Say "dotnet $opts"
 
             & dotnet $opts
 
             if (-not $?) {
-                Error-Log "Pack failed @""$_"". Code: $LASTEXITCODE"
+                SayError "Pack failed @""$_"". Code: $LASTEXITCODE"
             }
         }
     }
@@ -459,9 +459,7 @@ Function Test-Project {
     Begin {}
     Process {
         $XProjectLocations | Resolve-Path | %{
-            Trace-Log "Running tests in ""$_"""
-
-            $directoryName = Split-Path $_ -Leaf
+            Say "Running tests in ""$_"""
 
             Push-Location $_
 
@@ -471,12 +469,12 @@ Function Test-Project {
             }
             $opts += 'test', '--configuration', $Configuration
 
-            Trace-Log "dotnet $opts"
+            Say "dotnet $opts"
 
             & dotnet $opts
 
             if (-not $?) {
-                Error-Log "Tests failed @""$_"" on .NET Core. Code: $LASTEXITCODE"
+                SayError "Tests failed @""$_"" on .NET Core. Code: $LASTEXITCODE"
             }
 
             Pop-Location
