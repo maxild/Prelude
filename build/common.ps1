@@ -14,10 +14,14 @@ $ArtifactsFolder = Join-Path $RepoRoot 'artifacts'
 $SrcFolder = Join-Path $RepoRoot 'src'
 $TestFolder = Join-Path $RepoRoot 'test'
 
-# SDK versions
-#$DefaultDotNetCliVersion = 'Latest'
-#$DefaultDotNetCliVersion = '1.0.0-preview1-002702' #preview1 part of RC2 bits
-$DefaultDotNetCliVersion = '1.0.0-preview2-003121' #preview2
+# SDK versions (TODO: Should be in sync with global.json sdk version, because visual studio uses that vers)
+#$DefaultDotNetCliChannel = 'beta'
+$DefaultDotNetCliChannel = 'preview'
+#$DefaultDotNetCliVersion = beta
+#$De#faultDotNetCliVersion = 'Latest'
+#$DefaultDotNetCliVersion = '1.0.0-preview1-002702' #preview1 (channel is 'beta', not 'preview')
+#$DefaultDotNetCliVersion = '1.0.0-preview2-003030'  #some unofficial earlier preview2 daily build
+$DefaultDotNetCliVersion = '1.0.0-preview2-003121' #preview2 (that has support for Microsoft.NETCore.App, 1.0.0, i.e. v1 RTM)
 
 # restore, build, pack, test
 $DotNetCliFolder = Join-Path $RepoRoot '.dotnetcli'
@@ -27,10 +31,10 @@ $DotNetExe = Join-Path $DotNetCliFolder 'dotnet.exe'
 $NuGetFolder = Join-Path $RepoRoot '.nuget'
 $NuGetExe = Join-Path $NuGetFolder 'nuget.exe'
 
-# The following aliases will update nuget and dotnet for the powershell session
-# All commands executed in this script will use the aliases
-Set-Alias dotnet $DotNetExe
-Set-Alias nuget $NuGetExe
+# The following global aliases will update nuget and dotnet for the entire powershell session
+# All commands executed in this script will also use the aliases
+Set-Alias dotnet $DotNetExe -scope global
+Set-Alias nuget $NuGetExe -scope global
 
 Function Say($SayMessage = '') {
     Write-Host "[$(SayTime)]`t$SayMessage" -ForegroundColor Cyan
@@ -190,25 +194,25 @@ Function Install-NuGet {
 #  Example: https://dotnetcli.blob.core.windows.net/dotnet/Sdk/1.0.0-preview2-003121/dotnet-dev-win-x64.1.0.0-preview2-003121.zip
 #  Example: https://dotnetcli.blob.core.windows.net/dotnet/Sdk/1.0.0-preview3-003171/dotnet-dev-win-x64.1.0.0-preview3-003171.zip
 #
-#  Issue:
+#  Issue (https://github.com/dotnet/cli/issues/3728):
 #  https://dotnetcli.blob.core.windows.net/dotnet/Sdk/1.0.0-preview2-003121/dotnet-dev-win-x64.1.0.0-preview2-003121.zip => 404
 #
 #  Links on the rel/1.0.0-preview2 branch README.md page:
 #  RT+SDK: https://dotnetcli.blob.core.windows.net/dotnet/preview/Binaries/Latest/dotnet-dev-win-x64.latest.zip
 #  RTonly: https://dotnetcli.blob.core.windows.net/dotnet/preview/Binaries/Latest/dotnet-win-x64.latest.zip
 #
-#  https://dotnetcli.blob.core.windows.net/dotnet/preview/Binaries/{version}/dotnet-dev-win-x64.{version}.zip
-#  
+#  preview2: https://dotnetcli.blob.core.windows.net/dotnet/preview/Binaries/{version}/dotnet-dev-win-x64.{version}.zip
+#  preview1: https://dotnetcli.blob.core.windows.net/dotnet/beta/Binaries/{version}/dotnet-dev-win-x64.{version}.zip
+
 #  RT+SDK: {AzureFeed}/{Channel}/Binaries/{SpecificVersion}/dotnet-dev-win-{CLIArchitecture}.{SpecificVersion).zip"
 #  RTonly: {AzureFeed}/{Channel}/Binaries/{SpecificVersion}/dotnet-win-{CLIArchitecture}.{SpecificVersion).zip"
 #
-#  Channel = preview 
-#
-#  https://download.microsoft.com/download/1/5/2/1523EBE1-3764-4328-8961-D1BD8ECA9295/dotnet-dev-win-x64.1.0.0-preview2-003121.zip
+#  Channel = preview (beta, etc...) 
 Function Install-DotnetCLI {
     [CmdletBinding()]
     param(
-        [string] $CLIVersion = $DefaultDotNetCliVersion
+        [string] $Version = $DefaultDotNetCliVersion,
+        [string] $Channel = $DefaultDotNetCliChannel
     )
 
     Say 'Downloading .NET Core SDK Binaries'
@@ -247,17 +251,17 @@ Function Install-DotnetCLI {
     #Invoke-WebRequest 'https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0/scripts/obtain/dotnet-install.ps1' -OutFile $DotNetInstallScript
 
     # Install a pre-release stable (preview) version
-    & $DotNetInstallScript -Channel preview -InstallDir $DotNetCliFolder -Version $CLIVersion -NoPath
+    & $DotNetInstallScript -Channel $Channel -InstallDir $DotNetCliFolder -Version $Version -NoPath
    
     if (-not (Test-Path $DotNetExe)) {
         SayError "Unable to find dotnet.exe. The CLI install may have failed." -Fatal
     }
 
     # Display build info
-    #& $DotNetExe --info
+    & $DotNetExe --info
 
     # Display version
-    & $DotNetExe --version
+    #& $DotNetExe --version
 }
 
 # Get the sdk version from global.json
@@ -446,7 +450,8 @@ Function Invoke-DotnetPack {
             if($BuildLabel -ne 'Release') {
                 $opts += '--version-suffix', "${BuildLabel}-${BuildNumber}"
             }
-            $opts += '--serviceable'
+            # --serviceable requires preview 2
+            #$opts += '--serviceable'
 
             Say "dotnet $opts"
 
