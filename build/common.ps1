@@ -29,7 +29,7 @@ $NuGetExe = Join-Path $NuGetFolder 'nuget.exe'
 
 # The following aliases will update nuget and dotnet for the powershell session
 # All commands executed in this script will use the aliases
-#Set-Alias dotnet $DotNetExe #uncomment when Install-DotnetCLI works with pinned preview2 version
+Set-Alias dotnet $DotNetExe
 Set-Alias nuget $NuGetExe
 
 Function Say($SayMessage = '') {
@@ -192,6 +192,18 @@ Function Install-NuGet {
 #
 #  Issue:
 #  https://dotnetcli.blob.core.windows.net/dotnet/Sdk/1.0.0-preview2-003121/dotnet-dev-win-x64.1.0.0-preview2-003121.zip => 404
+#
+#  Links on the rel/1.0.0-preview2 branch README.md page:
+#  RT+SDK: https://dotnetcli.blob.core.windows.net/dotnet/preview/Binaries/Latest/dotnet-dev-win-x64.latest.zip
+#  RTonly: https://dotnetcli.blob.core.windows.net/dotnet/preview/Binaries/Latest/dotnet-win-x64.latest.zip
+#
+#  https://dotnetcli.blob.core.windows.net/dotnet/preview/Binaries/{version}/dotnet-dev-win-x64.{version}.zip
+#  
+#  RT+SDK: {AzureFeed}/{Channel}/Binaries/{SpecificVersion}/dotnet-dev-win-{CLIArchitecture}.{SpecificVersion).zip"
+#  RTonly: {AzureFeed}/{Channel}/Binaries/{SpecificVersion}/dotnet-win-{CLIArchitecture}.{SpecificVersion).zip"
+#
+#  Channel = preview 
+#
 #  https://download.microsoft.com/download/1/5/2/1523EBE1-3764-4328-8961-D1BD8ECA9295/dotnet-dev-win-x64.1.0.0-preview2-003121.zip
 Function Install-DotnetCLI {
     [CmdletBinding()]
@@ -199,7 +211,7 @@ Function Install-DotnetCLI {
         [string] $CLIVersion = $DefaultDotNetCliVersion
     )
 
-    Say 'Downloading Dotnet CLI'
+    Say 'Downloading .NET Core SDK Binaries'
 
     # create .dotnetcli subfolder if necessary
     New-Item -ItemType Directory -Force -Path $DotNetCliFolder | Out-Null
@@ -230,13 +242,13 @@ Function Install-DotnetCLI {
 
     $DotNetInstallScript = Join-Path $DotNetCliFolder "dotnet-install.ps1"
 
+    # TODO: Uncomment when we know download link URL is correct in script
     # wget the ./scripts/obtain/dotnet-install.ps1 script from the 'rel/1.0.0' branch in the github repo
-    Invoke-WebRequest 'https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0/scripts/obtain/dotnet-install.ps1' -OutFile $DotNetInstallScript
+    #Invoke-WebRequest 'https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0/scripts/obtain/dotnet-install.ps1' -OutFile $DotNetInstallScript
 
     # Install a pre-release stable (preview) version
     & $DotNetInstallScript -Channel preview -InstallDir $DotNetCliFolder -Version $CLIVersion -NoPath
-    #& $DotNetInstallScript -InstallDir $DotNetCliFolder -NoPath
-
+   
     if (-not (Test-Path $DotNetExe)) {
         SayError "Unable to find dotnet.exe. The CLI install may have failed." -Fatal
     }

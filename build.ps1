@@ -65,8 +65,8 @@ Invoke-BuildStep 'Cleaning package cache' { Clear-PackageCache } `
 Invoke-BuildStep 'Installing NuGet.exe' { Install-NuGet -Prerelease } `
     -ev +BuildErrors
 
-# Invoke-BuildStep 'Installing dotnet CLI' { Install-DotnetCLI } `
-#     -ev +BuildErrors
+Invoke-BuildStep 'Installing dotnet CLI' { Install-DotnetCLI } `
+    -ev +BuildErrors
 
 Invoke-BuildStep 'Restoring solution packages' { Restore-SolutionPackages } `
     -skip:$SkipRestore `
