@@ -56,6 +56,7 @@ fi
 # restore packages
 echo "dotnet restore src test --verbosity minimal"
 $DOTNET restore src test --verbosity minimal
+
 if [ $? -ne 0 ]; then
 	echo "Restore failed!!"
 	exit 1
@@ -77,13 +78,28 @@ do
 	echo "dotnet test $testDir --configuration $configuration --framework netcoreapp1.0"
 	$DOTNET test $testDir --configuration $configuration --framework netcoreapp1.0
 
+    if [ $? -ne 0 ]; then
+        echo "$testProjectName failed on .NET Core!!"
+        RESULTCODE=1
+    fi
+
     # Instead, build with .NET Core SDK (dotnet build)... 
     echo "dotnet build $testDir --configuration $configuration --framework net46"
 	$DOTNET build $testDir --configuration $configuration --framework net46
 
+    if [ $? -ne 0 ]; then
+        echo "$testProjectName failed to build for net46!!"
+        RESULTCODE=1
+    fi
+
     # ..., and run xUnit.net .NET CLI test runner directly with mono for the full/desktop .net version
     echo "mono ./bin/$configuration/net46/*/dotnet-test-xunit.exe ./bin/$configuration/net46/*/$testProjectName.dll"
     mono $testDir/bin/$configuration/net46/*/dotnet-test-xunit.exe $testDir/bin/$configuration/net46/*/$testProjectName.dll
+
+    if [ $? -ne 0 ]; then
+        echo "$testProjectName failed on Mono!!"
+        RESULTCODE=1
+    fi
 
 	popd
 
@@ -111,4 +127,11 @@ do
     echo "dotnet pack $srcDir -c $configuration -o $artifactsFolder --version-suffix=$revision"
     $DOTNET pack $srcDir -c $configuration -o $artifactsFolder --version-suffix=$revision  
 
+    if [ $? -ne 0 ]; then
+        echo "$srcProjectName failed to pack!!"
+        RESULTCODE=1
+    fi
+
 done
+
+exit $RESULTCODE
