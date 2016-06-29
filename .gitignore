@@ -1,6 +1,7 @@
 # .NET Core and NuGet
 .dotnetcli/*
 !.dotnetcli/dotnet-install.ps1
+!.dotnetcli/dotnet-install.sh
 .nuget/nuget.exe
 packages/
 project.lock.json

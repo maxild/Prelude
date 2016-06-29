@@ -251,7 +251,7 @@ Function Install-DotnetCLI {
     #Invoke-WebRequest 'https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0/scripts/obtain/dotnet-install.ps1' -OutFile $DotNetInstallScript
 
     # Install a pre-release stable (preview) version
-    & $DotNetInstallScript -Channel $Channel -InstallDir $DotNetCliFolder -Version $Version -NoPath
+    & $DotNetInstallScript -InstallDir $DotNetCliFolder -Channel $Channel -Version $Version -NoPath
    
     if (-not (Test-Path $DotNetExe)) {
         SayError "Unable to find dotnet.exe. The CLI install may have failed." -Fatal
