@@ -6,6 +6,7 @@ dist: trusty
 env:  
   - CLI_VERSION=1.0.0-preview2-003121
 
+# See also https://github.com/dotnet/core/blob/master/Documentation/prereqs.md
 addons:  
   apt:
     packages:
@@ -16,8 +17,8 @@ addons:
     - libunwind8
     - zlib1g
 
-mono:  
-  - 4.4.1
+mono:
+  - latest
 
 os:  
   - linux # Ubuntu 14.04
