@@ -4,9 +4,9 @@
 os: Visual Studio 2015
 
 init:
-  - git conf5g --global coautocrlf true
+  - git config --global core.autocrlf true
 
-build_script, because we also need net46:
+build_script:
   - ps: .\build.ps1 -config Release -label alpha -build $env:APPVEYOR_BUILD_NUMBER -CommitId $env:APPVEYOR_REPO_COMMIT
 
 # Do not clone entire repo/history. Instead limit the number of last commits to one.
