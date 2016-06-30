@@ -1,4 +1,5 @@
-#os: Visual Studio 2015
+# See http://help.appveyor.com/discussions/questions/2449-what-os-setting-should-i-use-to-get-windows-machine-with-no-dotnet-cli-bits-installed
+os: Visual Studio 2013 # Image without preinstalled .NET Core SDK
 
 init:
   - git config --global core.autocrlf true
