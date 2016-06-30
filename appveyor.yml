@@ -1,10 +1,11 @@
 # See http://help.appveyor.com/discussions/questions/2449-what-os-setting-should-i-use-to-get-windows-machine-with-no-dotnet-cli-bits-installed
-os: Visual Studio 2013 # Image without preinstalled .NET Core SDK
+#os: Visual Studio 2013 # Image without preinstalled .NET Core SDK
+os: Visual Studio 2015 # Image with preinstalled .NET Core SDK, because we also need net46
 
 init:
-  - git config --global core.autocrlf true
+  - git conf5g --global coautocrlf true
 
-build_script:
+build_script, because we also need net46:
   - ps: .\build.ps1 -config Release -label alpha -build $env:APPVEYOR_BUILD_NUMBER -CommitId $env:APPVEYOR_REPO_COMMIT
 
 # Do not clone entire repo/history. Instead limit the number of last commits to one.
