@@ -15,6 +15,7 @@ $SrcFolder = Join-Path $RepoRoot 'src'
 $TestFolder = Join-Path $RepoRoot 'test'
 
 # SDK versions (TODO: Should be in sync with global.json sdk version, because visual studio uses that vers)
+$DefaultDotNetCliInstallScriptUrl = 'https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0-preview2/scripts/obtain'
 #$DefaultDotNetCliChannel = 'beta'
 $DefaultDotNetCliChannel = 'preview'
 #$DefaultDotNetCliVersion = beta
@@ -246,9 +247,8 @@ Function Install-DotnetCLI {
 
     $DotNetInstallScript = Join-Path $DotNetCliFolder "dotnet-install.ps1"
 
-    # TODO: Uncomment when we know download link URL is correct in script
     # wget the ./scripts/obtain/dotnet-install.ps1 script from the 'rel/1.0.0' branch in the github repo
-    #Invoke-WebRequest 'https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0/scripts/obtain/dotnet-install.ps1' -OutFile $DotNetInstallScript
+    Invoke-WebRequest "$DefaultDotNetCliInstallScriptUrl/dotnet-install.ps1" -OutFile $DotNetInstallScript
 
     # Install a pre-release stable (preview) version
     & $DotNetInstallScript -InstallDir $DotNetCliFolder -Channel $Channel -Version $Version -NoPath
@@ -309,6 +309,18 @@ Function Clear-Artifacts {
     }
 }
 
+# You can list all the nuget package caches with this command
+#        nuget locals all -list        
+# On my windows machine it outputs
+#    http-cache:       %LOCALAPPDATA%\NuGet\v3-cache
+#    packages-cache:   %LOCALAPPDATA%\NuGet\Cache
+#    global-packages:  ~\.nuget\packages\
+#    temp:             %LOCALAPPDATA%\Temp\NuGetScratch
+# And running nuget restore with only nuget.org v3 feed it reports
+#    Feeds used:
+#        %LOCALAPPDATA%\NuGet\Cache          (packages-cache)
+#        C:\Users\Maxfire\.nuget\packages\   (global-packages)
+#        https://api.nuget.org/v3/index.json
 Function Clear-PackageCache {
     [CmdletBinding()]
     param()
@@ -319,7 +331,7 @@ Function Clear-PackageCache {
 
     #& nuget locals http-cache -clear -verbosity detailed
     & nuget locals packages-cache -clear -verbosity detailed
-    #& nuget locals global-packages -clear -verbosity detailed
+    & nuget locals global-packages -clear -verbosity detailed
     & nuget locals temp -clear -verbosity detailed
 }
 

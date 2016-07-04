@@ -26,8 +26,7 @@ fi
 # Download the CLI install script
 echo "Installing dotnet CLI"
 mkdir -p .dotnetcli
-# TODO: Uncomment when issue have been resolved
-#curl -o .dotnetcli/dotnet-install.sh https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0/scripts/obtain/dotnet-install.sh
+curl -o .dotnetcli/dotnet-install.sh https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0-preview2/scripts/obtain/dotnet-install.sh
 
 # Define the install root for the script (it defaults to ~/.dotnet)
 export DOTNET_INSTALL_DIR="$PWD/.dotnetcli"
@@ -42,9 +41,6 @@ chmod +x .dotnetcli/dotnet-install.sh
 # Display current version
 DOTNET="$DOTNET_INSTALL_DIR/dotnet"
 $DOTNET --version
-
-# TODO: --no-path and global aliasing...is it possible
-#export PATH="$DOTNET_INSTALL_DIR:$PATH"
 
 # clear caches
 if [ "$CLEAR_CACHE" == "1" ]
