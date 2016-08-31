@@ -1,18 +1,28 @@
-# .NET Core and NuGet
+# .NET Core
 .dotnetcli/*
-.nuget/nuget.exe
-packages/
-project.lock.json
 
-**/.vs/
-artifacts/
+# Rider
+/.idea
 
-# User-specific files
+# VS Code (share debug and task specific settings)
+/.vscode/*
+!/.vscode/settings.json
+!/.vscode/launch.json
+!/.vscode/tasks.json
+
+# Visual Studio
+/.vs
 *.suo
 *.user
-*.sln.docstates
+
+# Old (to be removed) psake build
+/packages
+/.nuget/*
+!/.nuget/packages.config
 
 # Build results
+artifacts/
+project.lock.json
 [Dd]ebug/
 [Rr]elease/
 [Bb]in/
@@ -30,18 +40,11 @@ artifacts/
 _ReSharper*/
 *.[Rr]e[Ss]harper
 
-# TeamCity is a build add-in
-_TeamCity*
-
 # DotCover is a Code Coverage Tool
 *.dotCover
 
 # Publish Web Output
 *.Publish.xml
-
-# Windows Azure Build Output
-csx
-*.build.csdef
 
 # Backup & report files from converting an old project file to a newer
 # Visual Studio version. Backup files are not needed, because we have git ;-)
