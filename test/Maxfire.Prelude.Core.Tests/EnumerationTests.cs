@@ -1,6 +1,6 @@
 using System;
 using Xunit;
-using FluentAssertions;
+using Shouldly;
 
 namespace Maxfire.Prelude.Tests
 {
@@ -18,96 +18,96 @@ namespace Maxfire.Prelude.Tests
         }
 
         [Fact]
-		public void GetAll()
-		{
-            Enumeration.GetAll<FooBarEnumeration>().Should().Equal(FooBarEnumeration.Foo, FooBarEnumeration.Bar);
-            Enumeration.GetAll(typeof(FooBarEnumeration)).Should().Equal(FooBarEnumeration.Foo, FooBarEnumeration.Bar);
+        public void GetAll()
+        {
+            Enumeration.GetAll<FooBarEnumeration>().ShouldBe(new [] { FooBarEnumeration.Foo, FooBarEnumeration.Bar});
+            Enumeration.GetAll(typeof(FooBarEnumeration)).ShouldBe(new[] { FooBarEnumeration.Foo, FooBarEnumeration.Bar});
         }
 
         [Fact]
         public void FromValue()
         {
-            Enumeration.FromValue<FooBarEnumeration>(1).Should().Be(FooBarEnumeration.Foo);
-            Enumeration.FromValue(typeof(FooBarEnumeration), 2).Should().Be(FooBarEnumeration.Bar);
+            Enumeration.FromValue<FooBarEnumeration>(1).ShouldBe(FooBarEnumeration.Foo);
+            Enumeration.FromValue(typeof(FooBarEnumeration), 2).ShouldBe(FooBarEnumeration.Bar);
         }
 
         [Fact]
         public void FromValueOrDefault()
         {
-            Enumeration.FromValueOrDefault<FooBarEnumeration>(1).Should().Be(FooBarEnumeration.Foo);
-            Enumeration.FromValueOrDefault(typeof(FooBarEnumeration), 2).Should().Be(FooBarEnumeration.Bar);
+            Enumeration.FromValueOrDefault<FooBarEnumeration>(1).ShouldBe(FooBarEnumeration.Foo);
+            Enumeration.FromValueOrDefault(typeof(FooBarEnumeration), 2).ShouldBe(FooBarEnumeration.Bar);
         }
 
         [Fact]
         public void FromValue_ThrowsIfNotFound()
         {
             Assert.Throws<ArgumentException>(() => Enumeration.FromValue<FooBarEnumeration>(0))
-                .Message.Should().Be("'0' is not a valid value for 'Maxfire.Prelude.Tests.EnumerationTests+FooBarEnumeration'.");
+                .Message.ShouldBe("'0' is not a valid value for 'Maxfire.Prelude.Tests.EnumerationTests+FooBarEnumeration'.");
             Assert.Throws<ArgumentException>(() => Enumeration.FromValue(typeof(FooBarEnumeration), 0))
-                .Message.Should().Be("'0' is not a valid value for 'Maxfire.Prelude.Tests.EnumerationTests+FooBarEnumeration'.");
+                .Message.ShouldBe("'0' is not a valid value for 'Maxfire.Prelude.Tests.EnumerationTests+FooBarEnumeration'.");
         }
 
         [Fact]
         public void FromValueOrDefault_ReturnsNullIfNotFound()
         {
-            Enumeration.FromValueOrDefault<FooBarEnumeration>(0).Should().BeNull();
-            Enumeration.FromValueOrDefault(typeof(FooBarEnumeration), 0).Should().BeNull();
+            Enumeration.FromValueOrDefault<FooBarEnumeration>(0).ShouldBeNull();
+            Enumeration.FromValueOrDefault(typeof(FooBarEnumeration), 0).ShouldBeNull();
         }
 
         [Fact]
         public void FromName()
         {
-            Enumeration.FromName<FooBarEnumeration>("Foo").Should().Be(FooBarEnumeration.Foo);
-            Enumeration.FromName(typeof(FooBarEnumeration), "Bar").Should().Be(FooBarEnumeration.Bar);
+            Enumeration.FromName<FooBarEnumeration>("Foo").ShouldBe(FooBarEnumeration.Foo);
+            Enumeration.FromName(typeof(FooBarEnumeration), "Bar").ShouldBe(FooBarEnumeration.Bar);
         }
 
         [Fact]
         public void FromNameOrDefault()
         {
-            Enumeration.FromNameOrDefault<FooBarEnumeration>("foo").Should().Be(FooBarEnumeration.Foo);
-            Enumeration.FromNameOrDefault(typeof(FooBarEnumeration), "bar").Should().Be(FooBarEnumeration.Bar);
+            Enumeration.FromNameOrDefault<FooBarEnumeration>("foo").ShouldBe(FooBarEnumeration.Foo);
+            Enumeration.FromNameOrDefault(typeof(FooBarEnumeration), "bar").ShouldBe(FooBarEnumeration.Bar);
         }
 
         [Fact]
         public void FromNameThrowsIfNotFound()
         {
             Assert.Throws<ArgumentException>(() => Enumeration.FromName<FooBarEnumeration>("Rubbish"))
-                .Message.Should().Be("'Rubbish' is not a valid name for 'Maxfire.Prelude.Tests.EnumerationTests+FooBarEnumeration'.");
+                .Message.ShouldBe("'Rubbish' is not a valid name for 'Maxfire.Prelude.Tests.EnumerationTests+FooBarEnumeration'.");
             Assert.Throws<ArgumentException>(() => Enumeration.FromName(typeof(FooBarEnumeration), "Rubbish"))
-                .Message.Should().Be("'Rubbish' is not a valid name for 'Maxfire.Prelude.Tests.EnumerationTests+FooBarEnumeration'.");
+                .Message.ShouldBe("'Rubbish' is not a valid name for 'Maxfire.Prelude.Tests.EnumerationTests+FooBarEnumeration'.");
         }
 
         [Fact]
         public void FromNameOrDefault_ReturnsNullIfNotFound()
         {
-            Enumeration.FromNameOrDefault<FooBarEnumeration>("Rubbish").Should().BeNull();
-            Enumeration.FromNameOrDefault(typeof(FooBarEnumeration), "Rubbish").Should().BeNull();
+            Enumeration.FromNameOrDefault<FooBarEnumeration>("Rubbish").ShouldBeNull();
+            Enumeration.FromNameOrDefault(typeof(FooBarEnumeration), "Rubbish").ShouldBeNull();
         }
 
         [Fact]
         public void Equality()
         {
-            FooBarEnumeration.Foo.Should().Be(FooBarEnumeration.Foo);
-            FooBarEnumeration.Foo.Should().NotBe(FooBarEnumeration.Bar);
+            FooBarEnumeration.Foo.ShouldBe(FooBarEnumeration.Foo);
+            FooBarEnumeration.Foo.ShouldNotBe(FooBarEnumeration.Bar);
             // equality by null
-            FooBarEnumeration.Foo.Equals(null).Should().BeFalse();
-            FooBarEnumeration.Foo.Equals((object)null).Should().BeFalse();
+            FooBarEnumeration.Foo.Equals(null).ShouldBeFalse();
+            FooBarEnumeration.Foo.Equals((object)null).ShouldBeFalse();
             // equality by type
-// ReSharper disable once SuspiciousTypeConversion.Global
-            FooBarEnumeration.Foo.Equals(AnotherFooBarEnumeration.Foo).Should().BeFalse();
-            FooBarEnumeration.Foo.Equals(new object()).Should().BeFalse();
+            // ReSharper disable once SuspiciousTypeConversion.Global
+            FooBarEnumeration.Foo.Equals(AnotherFooBarEnumeration.Foo).ShouldBeFalse();
+            FooBarEnumeration.Foo.Equals(new object()).ShouldBeFalse();
             // equality by value
-            AnotherFooBarEnumeration.Foo.Should().Be(new AnotherFooBarEnumeration(1, "Rubbish"));
-            AnotherFooBarEnumeration.Foo.Should().NotBe(new AnotherFooBarEnumeration(10, "Foo"));
+            AnotherFooBarEnumeration.Foo.ShouldBe(new AnotherFooBarEnumeration(1, "Rubbish"));
+            AnotherFooBarEnumeration.Foo.ShouldNotBe(new AnotherFooBarEnumeration(10, "Foo"));
         }
 
         [Fact]
         public void Comparison()
         {
-            FooBarEnumeration.Foo.Should().BeGreaterThan(null);
-            FooBarEnumeration.Foo.Should().BeLessThan(FooBarEnumeration.Bar);
-            FooBarEnumeration.Foo.Should().BeLessOrEqualTo(FooBarEnumeration.Bar);
-            FooBarEnumeration.Foo.Should().BeLessOrEqualTo(FooBarEnumeration.Foo);
+            FooBarEnumeration.Foo.ShouldBeGreaterThan(null);
+            FooBarEnumeration.Foo.ShouldBeLessThan(FooBarEnumeration.Bar);
+            FooBarEnumeration.Foo.ShouldBeLessThanOrEqualTo(FooBarEnumeration.Bar);
+            FooBarEnumeration.Foo.ShouldBeLessThanOrEqualTo(FooBarEnumeration.Foo);
         }
 
         public class AnotherFooBarEnumeration : Enumeration<AnotherFooBarEnumeration>

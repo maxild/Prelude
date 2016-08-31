@@ -1,30 +1,34 @@
 {
     "version": "1.0.0-*",
-    "description": "Maxfire.Prelude.ComponentModel.TypeConverters Class Library",
-    "authors": [ "Morten Maxild" ],
-    "owners": [ "Morten Maxild" ],
-    "tags": [ "prelude" ],
-    "releaseNotes": "CoreCLR support (rc1)",
-    "copyright": "Copyright © Morten Maxild 2016",
-    "licenseUrl": "http://www.apache.org/licenses/LICENSE-2.0",
-    "projectUrl": "https://github.com/maxild/Prelude/",
-    "compilationOptions": {
+    "buildOptions": {
+        "debugType": "portable",
         "warningsAsErrors": true
     },
+    "packOptions": {
+        "repository": {
+            "type": "git",
+            "url": "https://github.com/maxild/Prelude/"
+        },
+        "description": "Maxfire.Prelude.ComponentModel.TypeConverters Class Library",
+        "authors": [ "Morten Maxild" ],
+        "owners": [ "Morten Maxild" ],
+        "tags": [ "prelude" ],
+        "releaseNotes": ".NET Core 1.0 and .NET Framework 4.5.2 support",
+        "copyright": "Copyright © Morten Maxild 2016",
+        "licenseUrl": "http://www.apache.org/licenses/LICENSE-2.0",
+        "projectUrl": "https://github.com/maxild/Prelude/"
+    },
     "dependencies": {
-        "Maxfire.Prelude.Core": ""
+        "NETStandard.Library": "1.6.0",
+        "Maxfire.Prelude.Core": {
+            "target": "project"
+        }
     },
     "frameworks": {
-        "net451": {
+        "net452": {},
+        "netstandard1.5": {
             "dependencies": {
-            },
-            "frameworkAssemblies": {
-            }
-        },
-        "dnxcore50": {
-            "dependencies": {
-                "System.Runtime": "4.0.21-beta-*",
-                "System.ComponentModel.TypeConverter": "4.0.1-beta-*"
+                "System.ComponentModel.TypeConverter":  "4.1.0"
             }
         }
     }

@@ -1,19 +1,19 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Maxfire.Prelude.Core", "src\Maxfire.Prelude.Core\Maxfire.Prelude.Core.xproj", "{742C5EB7-3215-4554-91B0-50B75B50F3B4}"
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Maxfire.Prelude.Core", "src\Maxfire.Prelude.Core\Maxfire.Prelude.Core.xproj", "{5E0A3B5F-E23E-47C7-82AB-F6F2610411E7}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{B7C282B9-47F9-4110-A125-D03AF3D9E58B}"
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Maxfire.Prelude.ComponentModel.TypeConverter", "src\Maxfire.Prelude.ComponentModel.TypeConverter\Maxfire.Prelude.ComponentModel.TypeConverter.xproj", "{410996D9-6652-4C9F-8063-AADA8E791387}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{E68604F9-FC10-4653-B9ED-9760AFFABFB7}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{FCDB6BB4-4480-4E16-BC5C-07BD16D2AE07}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Maxfire.Prelude.Core.Tests", "test\Maxfire.Prelude.Core.Tests\Maxfire.Prelude.Core.Tests.xproj", "{944CAF88-2700-40C2-9123-1957AE3E76CB}"
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Maxfire.Prelude.Core.Tests", "test\Maxfire.Prelude.Core.Tests\Maxfire.Prelude.Core.Tests.xproj", "{9C7E58C4-31A0-4268-B3AC-2FC318369BB3}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Maxfire.Prelude.ComponentModel.TypeConverter", "src\Maxfire.Prelude.ComponentModel.TypeConverter\Maxfire.Prelude.ComponentModel.TypeConverter.xproj", "{F112EFF5-CDAA-4043-A76B-51FDC6751962}"
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Maxfire.Prelude.ComponentModel.TypeConverter.Tests", "test\Maxfire.Prelude.ComponentModel.TypeConverter.Tests\Maxfire.Prelude.ComponentModel.TypeConverter.Tests.xproj", "{69DAAFC5-854B-4080-8F1A-CF2852207EE4}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Maxfire.Prelude.ComponentModel.TypeConverter.Tests", "test\Maxfire.Prelude.ComponentModel.TypeConverter.Tests\Maxfire.Prelude.ComponentModel.TypeConverter.Tests.xproj", "{473A95CA-C8C6-463A-AACB-E2AB5D815AF1}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{0A843898-7167-4E24-BC89-A71087DAEBB8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,30 +21,30 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{742C5EB7-3215-4554-91B0-50B75B50F3B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{742C5EB7-3215-4554-91B0-50B75B50F3B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{742C5EB7-3215-4554-91B0-50B75B50F3B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{742C5EB7-3215-4554-91B0-50B75B50F3B4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{944CAF88-2700-40C2-9123-1957AE3E76CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{944CAF88-2700-40C2-9123-1957AE3E76CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{944CAF88-2700-40C2-9123-1957AE3E76CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{944CAF88-2700-40C2-9123-1957AE3E76CB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F112EFF5-CDAA-4043-A76B-51FDC6751962}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F112EFF5-CDAA-4043-A76B-51FDC6751962}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F112EFF5-CDAA-4043-A76B-51FDC6751962}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F112EFF5-CDAA-4043-A76B-51FDC6751962}.Release|Any CPU.Build.0 = Release|Any CPU
-		{473A95CA-C8C6-463A-AACB-E2AB5D815AF1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{473A95CA-C8C6-463A-AACB-E2AB5D815AF1}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{473A95CA-C8C6-463A-AACB-E2AB5D815AF1}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{473A95CA-C8C6-463A-AACB-E2AB5D815AF1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5E0A3B5F-E23E-47C7-82AB-F6F2610411E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5E0A3B5F-E23E-47C7-82AB-F6F2610411E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5E0A3B5F-E23E-47C7-82AB-F6F2610411E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5E0A3B5F-E23E-47C7-82AB-F6F2610411E7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{410996D9-6652-4C9F-8063-AADA8E791387}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{410996D9-6652-4C9F-8063-AADA8E791387}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{410996D9-6652-4C9F-8063-AADA8E791387}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{410996D9-6652-4C9F-8063-AADA8E791387}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C7E58C4-31A0-4268-B3AC-2FC318369BB3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C7E58C4-31A0-4268-B3AC-2FC318369BB3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C7E58C4-31A0-4268-B3AC-2FC318369BB3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C7E58C4-31A0-4268-B3AC-2FC318369BB3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{69DAAFC5-854B-4080-8F1A-CF2852207EE4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69DAAFC5-854B-4080-8F1A-CF2852207EE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69DAAFC5-854B-4080-8F1A-CF2852207EE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69DAAFC5-854B-4080-8F1A-CF2852207EE4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{742C5EB7-3215-4554-91B0-50B75B50F3B4} = {B7C282B9-47F9-4110-A125-D03AF3D9E58B}
-		{944CAF88-2700-40C2-9123-1957AE3E76CB} = {E68604F9-FC10-4653-B9ED-9760AFFABFB7}
-		{F112EFF5-CDAA-4043-A76B-51FDC6751962} = {B7C282B9-47F9-4110-A125-D03AF3D9E58B}
-		{473A95CA-C8C6-463A-AACB-E2AB5D815AF1} = {E68604F9-FC10-4653-B9ED-9760AFFABFB7}
+		{5E0A3B5F-E23E-47C7-82AB-F6F2610411E7} = {FCDB6BB4-4480-4E16-BC5C-07BD16D2AE07}
+		{410996D9-6652-4C9F-8063-AADA8E791387} = {FCDB6BB4-4480-4E16-BC5C-07BD16D2AE07}
+		{9C7E58C4-31A0-4268-B3AC-2FC318369BB3} = {0A843898-7167-4E24-BC89-A71087DAEBB8}
+		{69DAAFC5-854B-4080-8F1A-CF2852207EE4} = {0A843898-7167-4E24-BC89-A71087DAEBB8}
 	EndGlobalSection
 EndGlobal
