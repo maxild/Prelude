@@ -10,9 +10,6 @@ build_script:
   - ps: .\build.ps1 -target Verify -configuration Debug
   - ps: .\build.ps1 -target All -configuration Release
 
-# Do not clone entire repo/history. Instead limit the number of last commits to one.
-clone_depth: 1
-
 test: off
 
 artifacts:
