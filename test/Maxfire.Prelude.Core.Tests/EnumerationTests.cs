@@ -18,9 +18,9 @@ namespace Maxfire.Prelude.Tests
         }
 
         [Fact]
-		public void GetAll()
-		{
-            Enumeration.GetAll<FooBarEnumeration>().ShouldBe(new [] {FooBarEnumeration.Foo, FooBarEnumeration.Bar});
+        public void GetAll()
+        {
+            Enumeration.GetAll<FooBarEnumeration>().ShouldBe(new [] { FooBarEnumeration.Foo, FooBarEnumeration.Bar });
             Enumeration.GetAll(typeof(FooBarEnumeration)).ShouldBe(new[] { FooBarEnumeration.Foo, FooBarEnumeration.Bar });
         }
 
