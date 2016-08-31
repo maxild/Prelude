@@ -1,0 +1,66 @@
+# You can run
+#     GitVersion /showConfig
+# to see the effective configuration (defaults + overrides).
+#
+# See also: https://gitversion.readthedocs.io/en/latest/configuration/
+#
+# For all branches except dev GitVersion will produce the same
+# version NuGet package each commit until you tag a release.
+# The base version are calculated from
+#   1) next-version in config
+#   2) branch name (e.g. release/1.0.0)
+#   3) Tagging a commit (tag can be either 1.0.0 or v1.0.0 or v1.0.0-beta5, v.1.0.0-rc1)
+# GitVersion v3 has a problemtic sorting of tags because it doesn't bump the next version
+# of dev (ci builds) until release have been merged into master.
+# https://github.com/GitTools/GitVersion/issues/632
+# https://github.com/GitTools/GitVersion/issues/695
+# The sorting should be feature (alpha|a) < develop (cidev|dev|beta) < release|hotfix (rc) < master
+assembly-versioning-scheme: None
+mode: ContinuousDeployment
+#next-version: 1.0.0
+legacy-semver-padding: 4
+build-metadata-padding: 4
+commits-since-version-source-padding: 4
+commit-message-incrementing: Enabled
+branches:
+  features?[/-]:
+    mode: ContinuousDelivery
+    tag: a.{BranchName}
+    increment: Inherit
+    prevent-increment-of-merged-branch-version: false
+    track-merge-target: false
+    is-develop: false
+    is-release-branch: false
+    is-mainline: false
+  dev(elop)?(ment)?$:
+    mode: ContinuousDeployment
+    tag: dev
+    increment: Minor
+    prevent-increment-of-merged-branch-version: false
+    track-merge-target: true
+    is-develop: true
+    is-release-branch: false
+    is-mainline: false
+  # pull requests are not important, because we use a shared/centralized upstream repo and
+  # base all our work of supporting feature/xxx, release/x.y.z and hotfix/x.y.z branches.
+  # We have in fact turned off app veyor ci builds for pull requests in the github web hook
+  # config for the same reason, because app veyor have all ready build the supporting centralized
+  # branch.
+  releases?[/-]:
+    mode: ContinuousDelivery
+    tag: rc
+    increment: Patch
+    prevent-increment-of-merged-branch-version: true
+    track-merge-target: false
+    is-develop: false
+    is-release-branch: true
+    is-mainline: false
+  master:
+    mode: ContinuousDelivery
+    tag:
+    increment: Patch
+    prevent-increment-of-merged-branch-version: true
+    track-merge-target: false
+    is-develop: false
+    is-release-branch: false
+    is-mainline: true

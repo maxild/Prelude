@@ -1,5 +1,6 @@
-# .NET Core
-.dotnetcli/*
+# Tool folders
+.tools/
+.dotnet/
 
 # Rider
 /.idea
@@ -15,10 +16,8 @@
 *.suo
 *.user
 
-# Old (to be removed) psake build
-/packages
-/.nuget/*
-!/.nuget/packages.config
+# Assembly Versioning Patching
+src/*/Properties/AssemblyVersionInfo.cs
 
 # Build results
 artifacts/

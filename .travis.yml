@@ -1,13 +1,13 @@
-language: csharp  
+language: csharp
 
-sudo: required  
-dist: trusty  
+sudo: required
+dist: trusty
 
-env:  
+env:
   - CLI_VERSION=1.0.0-preview2-003121
 
 # See also https://github.com/dotnet/core/blob/master/Documentation/prereqs.md
-addons:  
+addons:
   apt:
     packages:
     - gettext
@@ -20,22 +20,19 @@ addons:
 mono:
   - latest
 
-os:  
+os:
   - linux # Ubuntu 14.04
   - osx
 
-osx_image: xcode7.2 # OSX 10.11
+osx_image: xcode7.3
 
-before_install:
-  - if test "$TRAVIS_OS_NAME" == "osx"; then
-      brew update;
-      brew install openssl;
-      brew link --force openssl;
-    fi
+install:
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install openssl; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then ln -s /usr/local/opt/openssl/lib/libcrypto.1.0.0.dylib /usr/local/lib/; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then ln -s /usr/local/opt/openssl/lib/libssl.1.0.0.dylib /usr/local/lib/; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew list; fi
 
-script:  
-  - ./build.sh
-
-branches:  
-  only:
-    - dotnetcli
+script:
+  - ./build.sh --target Verify --configuration Debug
+  - ./build.sh --target Verify --configuration Release

@@ -1,31 +1,38 @@
-{
-    "version": "1.0.0-*",
-    "description": "The core library of Maxfire.Prelude. The library contains extensions to .NET BCL that can be used when running on .NET Framework 4.x or .NET Core 1.0.",
-    "authors": [ "Morten Maxild" ],
-    "buildOptions": {
-        "debugType": "portable",
-        "warningsAsErrors": true,
-        "nowarn": [ "CS1591" ],
-        "xmlDoc": true
+﻿{
+  "version": "0.1.0-*",
+  "description": "The core library of Maxfire.Prelude. The library contains extensions to .NET BCL that can be used when running on .NET Framework 4.x or .NET Core 1.0.",
+  "authors": [
+    "Morten Maxild"
+  ],
+  "buildOptions": {
+    "debugType": "portable",
+    "warningsAsErrors": true,
+    "nowarn": [
+      "CS1591"
+    ],
+    "xmlDoc": true
+  },
+  "packOptions": {
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/maxild/Prelude/"
     },
-    "packOptions": {
-        "repository": {
-            "type": "git",
-            "url": "https://github.com/maxild/Prelude/"
-        },
-        "releaseNotes": ".NET Core 1.0 and .NET Framework 4.5.2 support",
-        "copyright": "Copyright © Morten Maxild 2016",
-        "licenseUrl": "http://www.apache.org/licenses/LICENSE-2.0",
-        "projectUrl": "https://github.com/maxild/Prelude/",
-        "owners": [ "Morten Maxild" ],
-        "tags": [ "prelude" ]
-    },
-    "dependencies": {
-        "NETStandard.Library": "1.6.0"
-    },
-
-    "frameworks": {
-        "net452": {},
-        "netstandard1.5": {}
-    }
+    "releaseNotes": ".NET Core 1.0 and .NET Framework 4.5.2 support",
+    "copyright": "Copyright © Morten Maxild 2016",
+    "licenseUrl": "http://www.apache.org/licenses/LICENSE-2.0",
+    "projectUrl": "https://github.com/maxild/Prelude/",
+    "owners": [
+      "Morten Maxild"
+    ],
+    "tags": [
+      "prelude"
+    ]
+  },
+  "dependencies": {
+    "NETStandard.Library": "1.6.0"
+  },
+  "frameworks": {
+    "net452": {},
+    "netstandard1.5": {}
+  }
 }
