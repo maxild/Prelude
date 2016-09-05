@@ -3,7 +3,7 @@
 
 // Install tools.
 //#tool "nuget:https://www.nuget.org/api/v2?package=gitreleasemanager&version=0.5.0"
-#tool "nuget:https://www.nuget.org/api/v2?package=GitVersion.CommandLine&version=4.0.0-beta0005"
+#tool "nuget:https://www.nuget.org/api/v2?package=GitVersion.CommandLine&version=4.0.0-beta0007"
 
 // Load other scripts
 #load "build/parameters.cake"
