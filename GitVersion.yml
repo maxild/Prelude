@@ -68,3 +68,13 @@ branches:
     is-develop: false
     is-release-branch: false
     is-mainline: true
+  hotfix:
+    regex: hotfix(es)?[/-]
+    mode: ContinuousDelivery
+    tag: rc
+    increment: Patch
+    prevent-increment-of-merged-branch-version: true
+    track-merge-target: false
+    is-develop: false
+    is-release-branch: false
+    is-mainline: false
