@@ -31,5 +31,5 @@ deploy:
   skip_symbols: true
   artifact: Packages
   on:
-    branch: master
-    appveyor_repo_tag: true # trigger deployment on tag only
+    branch: /v\d+\.\d+\.\d+/   # only deploy non-prerelease versions
+    appveyor_repo_tag: true    # deploy on tag push only
