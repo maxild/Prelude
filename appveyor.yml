@@ -33,5 +33,5 @@ deploy:
   on:
     # When branch is not sent in webhook payload (base_ref == null, when not using Web UI)
     # it's set to tag name. See http://help.appveyor.com/discussions/questions/1635-github-deploy-with-condition-branch-master
-    branch: /v\d+\.\d+\.\d+/
-    appveyor_repo_tag: true # deploy on tag push only
+    branch: /v\d+\.\d+\.\d+/   # only deploy non-prerelease versions
+    appveyor_repo_tag: true    # deploy on tag push only
