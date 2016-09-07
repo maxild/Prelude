@@ -1,6 +1,7 @@
 # Prelude
 
-[![NuGet](https://img.shields.io/nuget/v/Maxfire.Prelude.Code.svg)](https://www.nuget.org/packages/Maxfire.Prelude.Core/) [![NuGet](https://img.shields.io/nuget/v/Maxfire.Prelude.ComponentModel.TypeConverter.svg)](https://www.nuget.org/packages/Maxfire.Prelude.ComponentModel.TypeConverter/)
+[![NuGet](https://img.shields.io/nuget/v/Maxfire.Prelude.Core.svg)](https://www.nuget.org/packages/Maxfire.Prelude.Core/)
+[![NuGet](https://img.shields.io/nuget/v/Maxfire.Prelude.ComponentModel.TypeConverter.svg)](https://www.nuget.org/packages/Maxfire.Prelude.ComponentModel.TypeConverter/)
 
 [![MyGet](https://img.shields.io/myget/maxfire-ci/vpre/Maxfire.Prelude.Core.svg?label=Maxfire.Prelude.Core)](https://www.myget.org/gallery/maxfire-ci) [![MyGet](https://img.shields.io/myget/maxfire-ci/vpre/Maxfire.Prelude.ComponentModel.TypeConverter.svg?label=Maxfire.Prelude.ComponentModel.TypeConverter)](https://www.myget.org/gallery/maxfire-ci)
 
