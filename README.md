@@ -8,9 +8,21 @@ Travis:  [![Build Status](https://travis-ci.org/maxild/Prelude.svg?branch=dotnet
 
 ## Get Packages
 
-Releases are published to nuget.org. Insert link to gallery here, when we are ready to support official releases.
+Stable releases can be found on the NuGet gallery. Our CI build also produces packages, that can be found on our MyGet feed.
 
-If you're feeling adventurous, [continuous integration builds are on MyGet](https://www.myget.org/gallery/maxfire-prelude).
+### Stable releases
+
+[![NuGet](https://img.shields.io/nuget/v/Maxfire.Prelude.Core.svg?label=Maxfire.Prelude.Core)](https://www.nuget.org/packages/Maxfire.Prelude.Core/)
+[![NuGet](https://img.shields.io/nuget/v/Maxfire.Prelude.ComponentModel.TypeConverter.svg?label=Maxfire.Prelude.ComponentModel.TypeConverter)](https://www.nuget.org/packages/Maxfire.Prelude.ComponentModel.TypeConverter/)
+
+Stable releases are published to [NuGet.org](https://www.nuget.org/packages?q=Maxfire.Prelude).
+
+### Unstable releases (pre-releases)
+
+[![MyGet](https://img.shields.io/myget/maxfire-ci/vpre/Maxfire.Prelude.Core.svg?label=Maxfire.Prelude.Core)](https://www.myget.org/gallery/maxfire-ci)
+[![MyGet](https://img.shields.io/myget/maxfire-ci/vpre/Maxfire.Prelude.ComponentModel.TypeConverter.svg?label=Maxfire.Prelude.ComponentModel.TypeConverter)](https://www.myget.org/gallery/maxfire-ci)
+
+If you're feeling adventurous, [continuous integration builds are on MyGet](https://www.myget.org/gallery/maxfire-ci).
 
 ## Misc
 
