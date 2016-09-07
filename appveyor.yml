@@ -19,13 +19,17 @@ artifacts:
 deploy:
 # Deploy to Myget on every push to Github
 - provider: NuGet
+  name: CI-feed
   server: https://www.myget.org/F/maxfire-ci/api/v2/package
   api_key:
     secure: EOVLFyiHRhh9Jij3/mITdSV5JH1SzT8JUbqqTIFtvOPndNeMme3mME01ws3+5nFB
   skip_symbols: true
   artifact: Packages
+  on:
+    branch: /^(?!.*master).*$/ # except master
 # Deploy to NuGet.org only on tagged master branch pushes to Github
 - provider: NuGet
+  name: Production-feed
   api_key:
     secure: DInFdMch2u8btkaNWMOPYOsnV6eknvY0rJvdxIkCi3Sijxc+b6i8a7142SbWtzBK
   skip_symbols: true
