@@ -1,0 +1,25 @@
+issue-labels-include:
+- bug
+- enhancement
+- feature
+- optimization
+- breaking
+issue-labels-exclude:
+- help wanted
+- question
+- invalid
+- wontfix
+- duplicate
+- discussion
+- docs
+- investigate
+- idea
+- refactoring
+- build
+- workflow
+- tests
+- 'Planning: MilestoneMaster'
+issue-labels-alias:
+    - name:    breaking
+      header:  breaking change
+      plural:  breaking changes

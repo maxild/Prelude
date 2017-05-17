@@ -1,5 +1,5 @@
 ﻿{
-  "version": "0.1.4-*",
+  "version": "0.2.0-*",
   "description": "The core library of Maxfire.Prelude. The library contains extensions to .NET BCL that can be used when running on .NET Framework 4.x or .NET Core 1.0.",
   "authors": [
     "Morten Maxild"

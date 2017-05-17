@@ -103,7 +103,7 @@ Task("Restore")
 
     DotNetCoreRestore("./", new DotNetCoreRestoreSettings
     {
-        ToolPath = parameters.Paths.Tools.DotNet,
+        ToolPath = useSystemDotNetPath ? null : parameters.Paths.Tools.DotNet,
         Verbose = false,
         Verbosity = DotNetCoreRestoreVerbosity.Minimal
     });
@@ -127,7 +127,7 @@ Task("Build")
     foreach (var project in GetFiles("./**/project.json"))
     {
         DotNetCoreBuild(project.GetDirectory().FullPath, new DotNetCoreBuildSettings {
-            ToolPath = parameters.Paths.Tools.DotNet,
+            ToolPath = useSystemDotNetPath ? null : parameters.Paths.Tools.DotNet,
             VersionSuffix = parameters.VersionInfo.VersionSuffix,
             Configuration = parameters.Configuration
         });
@@ -172,7 +172,7 @@ Task("Test")
 {
     var results = new List<TestResult>();
 
-    var dotnet = parameters.Paths.Tools.DotNet.FullPath;
+    var dotnet = useSystemDotNetPath ? "dotnet" : MakeAbsolute(parameters.Paths.Tools.DotNet).FullPath;
 
     foreach (var testPrj in GetFiles(string.Format("{0}/**/project.json", parameters.Paths.Directories.Test)))
     {
@@ -243,7 +243,7 @@ Task("Package")
         Information("Build nupkg in {0}", project.GetDirectory());
 
         DotNetCorePack(project.GetDirectory().FullPath, new DotNetCorePackSettings {
-            ToolPath = parameters.Paths.Tools.DotNet,
+            ToolPath = useSystemDotNetPath ? null : parameters.Paths.Tools.DotNet,
             VersionSuffix = parameters.VersionInfo.VersionSuffix,
             Configuration = parameters.Configuration,
             OutputDirectory = parameters.Paths.Directories.Artifacts,
@@ -468,7 +468,7 @@ Task("InstallDotNet")
         throw new Exception(string.Format("Unable to find {0}. The dotnet CLI install may have failed.", parameters.Paths.Tools.DotNet));
     }
 
-    var dotnet = parameters.Paths.Tools.DotNet.FullPath;
+    var dotnet = useSystemDotNetPath ? "dotnet" : MakeAbsolute(parameters.Paths.Tools.DotNet).FullPath;
 
     try
     {
