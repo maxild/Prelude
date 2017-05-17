@@ -44,6 +44,7 @@ http://cakebuild.net
 Param(
     [string]$Script = "build.cake",
     [string]$Target = "Default",
+    [ValidateSet("Release", "Debug")]
     [string]$Configuration = "Release",
     [ValidateSet("Quiet", "Minimal", "Normal", "Verbose", "Diagnostic")]
     [string]$Verbosity = "Verbose",
@@ -85,16 +86,13 @@ function MD5HashFile([string] $filePath)
 $PSScriptRoot = split-path -parent $MyInvocation.MyCommand.Definition;
 
 # Tree
-$BUILD_DIR           = Join-Path $PSScriptRoot "build" # build scripts, maybe rename
-$TOOLS_DIR           = Join-Path $PSScriptRoot ".tools"
+$TOOLS_DIR           = Join-Path $PSScriptRoot "tools"
 $NUGET_EXE           = Join-Path $TOOLS_DIR "nuget.exe"
 $CAKE_EXE            = Join-Path $TOOLS_DIR "Cake/Cake.exe"
-$PACKAGES_CONFIG     = Join-Path $BUILD_DIR "packages.config" # containing Cake dependency
+$PACKAGES_CONFIG     = Join-Path $TOOLS_DIR "packages.config" # containing Cake dependency
 $PACKAGES_CONFIG_MD5 = Join-Path $TOOLS_DIR "packages.config.md5sum"
 
-# Aliases for the entire powershell session
-Set-Alias nuget $NUGET_EXE -scope global
-Set-Alias cake  $CAKE_EXE -scope global
+$NUGET_URL = "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
 
 # Should we use mono?
 $UseMono = "";
@@ -117,7 +115,7 @@ if($WhatIf.IsPresent) {
     $UseDryRun = "-dryrun"
 }
 
-# Make sure .tools folder exists
+# Make sure tools folder exists
 if ((Test-Path $PSScriptRoot) -and (-not (Test-Path $TOOLS_DIR))) {
     Write-Verbose -Message "Creating tools directory..."
     New-Item -Path $TOOLS_DIR -Type directory | out-null
@@ -127,7 +125,7 @@ if ((Test-Path $PSScriptRoot) -and (-not (Test-Path $TOOLS_DIR))) {
 if (-not (Test-Path $NUGET_EXE)) {
     Write-Verbose -Message "Downloading NuGet.exe..."
     try {
-        Invoke-WebRequest "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe" -OutFile $NUGET_EXE
+        Invoke-WebRequest $NUGET_URL -OutFile $NUGET_EXE
     } catch {
         Throw "Could not download NuGet.exe."
     }
@@ -142,12 +140,12 @@ if(-not $SkipToolPackageRestore.IsPresent) {
     [string] $md5Hash = MD5HashFile $PACKAGES_CONFIG
     if ( (-not (Test-Path $PACKAGES_CONFIG_MD5)) -Or
       ($md5Hash -ne (Get-Content $PACKAGES_CONFIG_MD5 )) ) {
-        Write-Verbose -Message "Missing or changed packages.config hash..."
-        Remove-Item * -Recurse -Exclude nuget.exe # remove installed tools (ie. cake)
+        Write-Verbose -Message "Missing or changed $PACKAGES_CONFIG_MD5 file..."
+        Remove-Item * -Recurse -Exclude packages.config,nuget.exe # remove installed tools (ie. Cake and Maxfire.CakeScripts)
     }
 
     Write-Verbose -Message "Restoring tools from NuGet..."
-    $NuGetOutput = &nuget install $PACKAGES_CONFIG -ExcludeVersion -OutputDirectory `"$TOOLS_DIR`"
+    $NuGetOutput = & $NUGET_EXE install $PACKAGES_CONFIG -ExcludeVersion -OutputDirectory `"$TOOLS_DIR`" -Source https://api.nuget.org/v3/index.json
     if ($LASTEXITCODE -ne 0) {
         Throw "An error occured while restoring NuGet tools."
     }
@@ -158,6 +156,20 @@ if(-not $SkipToolPackageRestore.IsPresent) {
     }
 
     Write-Verbose -Message ($NuGetOutput | out-string)
+
+    # Install re-usable cake scripts, using the latest version
+    # Note: We cannot put the package reference into ./tools/packages.json, because this file does not support floating versions
+    if (-not (Test-Path (Join-Path $TOOLS_DIR 'Maxfire.CakeScripts'))) {
+        $NuGetOutput = & $NUGET_EXE install Maxfire.CakeScripts -ExcludeVersion -Prerelease -OutputDirectory `"$TOOLS_DIR`" -Source https://www.myget.org/F/maxfire/api/v3/index.json
+        if ($LASTEXITCODE -ne 0) {
+            Throw "An error occured while restoring Maxfire.CakeScripts."
+        }
+        else
+        {
+            Write-Verbose -Message ($NuGetOutput | out-string)
+        }
+    }
+
     Pop-Location
 }
 
@@ -166,16 +178,18 @@ if (-not (Test-Path $CAKE_EXE)) {
     Throw "Could not find Cake.exe at $CAKE_EXE"
 }
 
+
+
 # Start Cake
 if($ShowVersion.IsPresent) {
-    &cake -version
+    & $CAKE_EXE -version
 }
 else {
     Write-Host "Running build script..."
     # C# v6 features (e.g. string interpolation) are not supported without '-experimental' flag
     #   See https://github.com/cake-build/cake/issues/293
     #   See https://github.com/cake-build/cake/issues/326
-    #&cake $Script -experimental -target="$Target" -configuration="$Configuration" -verbosity="$Verbosity" $UseMono $UseDryRun $UseExperimental $ScriptArgs
-    &cake $Script -target="$Target" -configuration="$Configuration" -verbosity="$Verbosity" $UseMono $UseDryRun $UseExperimental $ScriptArgs
+    #& $CAKE_EXE $Script -experimental -target="$Target" -configuration="$Configuration" -verbosity="$Verbosity" $UseMono $UseDryRun $UseExperimental $ScriptArgs
+    & $CAKE_EXE $Script -target="$Target" -configuration="$Configuration" -verbosity="$Verbosity" $UseMono $UseDryRun $UseExperimental $ScriptArgs
 }
 exit $LASTEXITCODE

@@ -1,6 +1,9 @@
-# Tool folders
-.tools/
 .dotnet/
+artifacts/
+tools/*
+!tools/packages.config
+
+src/CommonAssemblyInfo.cs
 
 # Rider
 /.idea
