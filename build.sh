@@ -9,11 +9,11 @@
 # Define directories.
 SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-TOOLS_DIR=$SCRIPT_DIR/tools
-NUGET_EXE=$TOOLS_DIR/nuget.exe
-CAKE_EXE=$TOOLS_DIR/Cake/Cake.exe
-PACKAGES_CONFIG=$TOOLS_DIR/packages.config
-PACKAGES_CONFIG_MD5=$TOOLS_DIR/packages.config.md5sum
+TOOLS_DIR="$SCRIPT_DIR/tools"
+NUGET_EXE="$TOOLS_DIR/nuget.exe"
+CAKE_EXE="$TOOLS_DIR/Cake/Cake.exe"
+PACKAGES_CONFIG="$TOOLS_DIR/packages.config"
+PACKAGES_CONFIG_MD5="$TOOLS_DIR/packages.config.md5sum"
 
 # Define md5sum or md5 depending on Linux/OSX
 MD5_EXE=
@@ -66,7 +66,7 @@ fi
 pushd "$TOOLS_DIR" >/dev/null
 
 # Check for changes in packages.config and remove installed tools if true.
-    if [ ! -f $PACKAGES_CONFIG_MD5 ] || [ "$( cat $PACKAGES_CONFIG_MD5 | sed 's/\r$//' )" != "$( $MD5_EXE $PACKAGES_CONFIG | awk '{ print $1 }' )" ]; then
+if [ ! -f $PACKAGES_CONFIG_MD5 ] || [ "$( cat $PACKAGES_CONFIG_MD5 | sed 's/\r$//' )" != "$( $MD5_EXE $PACKAGES_CONFIG | awk '{ print $1 }' )" ]; then
     find . -type d ! -name . | xargs rm -rf
 fi
 
@@ -78,6 +78,12 @@ fi
 
 # save packages.config hash to disk
 $MD5_EXE $PACKAGES_CONFIG | awk '{ print $1 }' >| $PACKAGES_CONFIG_MD5
+
+# Install re-usable cake scripts, using the latest version
+# Note: We cannot put the package reference into ./tools/packages.json, because this file does not support floating versions
+if [ ! d "$TOOLS_DIR/Maxfire.CakeScripts" ]; then
+    mono "$NUGET_EXE" install Maxfire.CakeScripts -ExcludeVersion -Prerelease -Source https://www.myget.org/F/maxfire/api/v3/index.json
+fi
 
 popd >/dev/null
 
