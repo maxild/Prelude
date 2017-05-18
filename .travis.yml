@@ -1,12 +1,12 @@
 language: csharp
+os:
+  - linux # Ubuntu 14.04
+  - osx
 
+# .NET CLI require Ubuntu 14.04
+# See also https://github.com/dotnet/core/blob/master/Documentation/prereqs.md
 sudo: required
 dist: trusty
-
-env:
-  - CLI_VERSION=1.0.0-preview2-003121
-
-# See also https://github.com/dotnet/core/blob/master/Documentation/prereqs.md
 addons:
   apt:
     packages:
@@ -17,14 +17,17 @@ addons:
     - libunwind8
     - zlib1g
 
+env:
+  - CLI_VERSION=1.0.0-preview2-003121
+
 mono:
-  - latest
+  - 4.2.3
+  #- latest
 
-os:
-  - linux # Ubuntu 14.04
-  - osx
 
-osx_image: xcode7.3
+# .NET CLI require OSX 10.10
+osx_image: xcode7.1
+#osx_image: xcode7.3
 
 install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update; fi
