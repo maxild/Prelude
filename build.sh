@@ -81,7 +81,7 @@ $MD5_EXE $PACKAGES_CONFIG | awk '{ print $1 }' >| $PACKAGES_CONFIG_MD5
 
 # Install re-usable cake scripts, using the latest version
 # Note: We cannot put the package reference into ./tools/packages.json, because this file does not support floating versions
-if [ ! d "$TOOLS_DIR/Maxfire.CakeScripts" ]; then
+if [ ! -d "$TOOLS_DIR/Maxfire.CakeScripts" ]; then
     mono "$NUGET_EXE" install Maxfire.CakeScripts -ExcludeVersion -Prerelease -Source https://www.myget.org/F/maxfire/api/v3/index.json
 fi
 
