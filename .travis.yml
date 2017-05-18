@@ -34,5 +34,5 @@ install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew list; fi
 
 script:
-  - ./build.sh --target Verify --configuration Debug --verbosity=diagnostic
+  - ./build.sh --target Verify --configuration Debug --verbosity diagnostic
   #- ./build.sh --target Verify --configuration Release
