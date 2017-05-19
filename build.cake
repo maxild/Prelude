@@ -225,7 +225,7 @@ Task("Test2")
 
 Task("Package")
     .IsDependentOn("Clear-Artifacts")
-    .IsDependentOn("Build")
+    .IsDependentOn("Test")
     .Does(() =>
 {
     foreach (var project in GetFiles(string.Format("{0}/**/project.json", parameters.Paths.Directories.Src)))
@@ -244,7 +244,7 @@ Task("Package")
 
 Task("Package2")
     .IsDependentOn("Clear-Artifacts")
-    .IsDependentOn("Test")
+    .IsDependentOn("Test2")
     .IsDependentOn("Copy-Artifacts");
 
 ///////////////////////////////////////////////////////////////////////////////
