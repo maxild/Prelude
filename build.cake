@@ -51,16 +51,13 @@ Setup(context =>
 // PRIMARY TASKS (direct targets)
 ///////////////////////////////////////////////////////////////////////////////
 
-Task("All")
-    .IsDependentOn("Test")
-    .IsDependentOn("Package");
-
-Task("Verify")
-    .IsDependentOn("Test");
-
 Task("Default")
     .IsDependentOn("Show-Info")
     .IsDependentOn("Print-AppVeyor-Environment-Variables")
+    .IsDependentOn("Package");
+
+Task("Travis")
+    .IsDependentOn("Show-Info")
     .IsDependentOn("Package");
 
 Task("AppVeyor")

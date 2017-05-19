@@ -7,8 +7,8 @@ init:
   - git config --global core.autocrlf input
 
 build_script:
-  - ps: .\build.ps1 -target Verify -configuration Debug -verbosity diagnostic
-  #- ps: .\build.ps1 -target All -configuration Release
+  - ps: .\build.ps1 -target AppVeyor -configuration Debug -verbosity diagnostic
+  #- ps: .\build.ps1 -target AppVeyor -configuration Release
 
 test: off
 
