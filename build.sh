@@ -20,7 +20,7 @@ DOTNET_CHANNEL="preview"
 DOTNET_VERSION="1.0.0-preview2-003121"
 DOTNET_CHANNEL_INSTALLER_URL="https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0-preview2/scripts/obtain/dotnet-install.sh"
 
-$NUGET_URL="https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
+NUGET_URL="https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
 
 # Define md5sum or md5 depending on Linux/OSX
 MD5_EXE=
