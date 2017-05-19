@@ -16,6 +16,9 @@ CAKE_EXE="$TOOLS_DIR/Cake/Cake.exe"
 PACKAGES_CONFIG="$TOOLS_DIR/packages.config"
 PACKAGES_CONFIG_MD5="$TOOLS_DIR/packages.config.md5sum"
 
+# Maxfire.CakeScripts version can be pinned
+CAKESCRIPTS_VERSION="latest" # 'latest' or 'major.minor.patch'
+
 DOTNET_CHANNEL="preview"
 DOTNET_VERSION="1.0.0-preview2-003121"
 DOTNET_CHANNEL_INSTALLER_URL="https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0-preview2/scripts/obtain/dotnet-install.sh"
@@ -111,10 +114,15 @@ fi
 # save packages.config hash to disk
 $MD5_EXE $PACKAGES_CONFIG | awk '{ print $1 }' >| $PACKAGES_CONFIG_MD5
 
-# Install re-usable cake scripts, using the latest version
+# Install re-usable cake scripts
 # Note: We cannot put the package reference into ./tools/packages.json, because this file does not support floating versions
 if [ ! -d "$TOOLS_DIR/Maxfire.CakeScripts" ]; then
-    mono "$NUGET_EXE" install Maxfire.CakeScripts -ExcludeVersion -Prerelease -Source https://www.myget.org/F/maxfire/api/v3/index.json
+    # latest or empty string
+    if [[ $CAKESCRIPTS_VERSION == "latest" ]] || [[ -z "$CAKESCRIPTS_VERSION" ]]; then
+        mono "$NUGET_EXE" install Maxfire.CakeScripts -ExcludeVersion -Prerelease -Source https://www.myget.org/F/maxfire/api/v3/index.json
+    else
+        mono "$NUGET_EXE" install Maxfire.CakeScripts -Version "$CAKESCRIPTS_VERSION" -ExcludeVersion -Prerelease -Source https://www.myget.org/F/maxfire/api/v3/index.json
+    fi
 fi
 
 popd >/dev/null

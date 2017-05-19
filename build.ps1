@@ -67,6 +67,9 @@ $CAKE_EXE            = Join-Path $TOOLS_DIR "Cake/Cake.exe"
 $PACKAGES_CONFIG     = Join-Path $TOOLS_DIR "packages.config" # containing Cake dependency
 $PACKAGES_CONFIG_MD5 = Join-Path $TOOLS_DIR "packages.config.md5sum"
 
+# Maxfire.CakeScripts version can be pinned
+$CakeScriptsVersion = "latest" # 'latest' or 'major.minor.patch'
+
 $DotNetChannel = "preview";
 $DotNetVersion = "1.0.0-preview2-003121";
 $DotNetInstallerUri = "https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0-preview2/scripts/obtain/dotnet-install.ps1";
@@ -217,7 +220,12 @@ if(-not $SkipToolPackageRestore.IsPresent) {
     # Install re-usable cake scripts, using the latest version
     # Note: We cannot put the package reference into ./tools/packages.json, because this file does not support floating versions
     if (-not (Test-Path (Join-Path $TOOLS_DIR 'Maxfire.CakeScripts'))) {
-        $NuGetOutput = & $NUGET_EXE install Maxfire.CakeScripts -ExcludeVersion -Prerelease -OutputDirectory `"$TOOLS_DIR`" -Source https://www.myget.org/F/maxfire/api/v3/index.json
+        if ( ($CakeScriptsVersion -eq "latest") -or [string]::IsNullOrWhitespace($CakeScriptsVersion) ) {
+            $NuGetOutput = & $NUGET_EXE install Maxfire.CakeScripts -ExcludeVersion -Prerelease -OutputDirectory `"$TOOLS_DIR`" -Source https://www.myget.org/F/maxfire/api/v3/index.json
+        }
+        else {
+            $NuGetOutput = & $NUGET_EXE install Maxfire.CakeScripts -Version $CakeScriptsVersion -ExcludeVersion -Prerelease -OutputDirectory `"$TOOLS_DIR`" -Source https://www.myget.org/F/maxfire/api/v3/index.json
+        }
         if ($LASTEXITCODE -ne 0) {
             Throw "An error occured while restoring Maxfire.CakeScripts."
         }
