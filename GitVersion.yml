@@ -10,11 +10,20 @@
 #   1) next-version in config
 #   2) branch name (e.g. release/1.0.0)
 #   3) Tagging a commit (tag can be either 1.0.0 or v1.0.0 or v1.0.0-beta5, v.1.0.0-rc1)
-# GitVersion v3 has a problemtic sorting of tags because it doesn't bump the next version
+# GitVersion v3 has a problematic sorting of tags because it doesn't bump the next version
 # of dev (ci builds) until release have been merged into master.
 # https://github.com/GitTools/GitVersion/issues/632
 # https://github.com/GitTools/GitVersion/issues/695
-# The sorting should be feature (alpha|a) < develop (cidev|dev|beta) < release|hotfix (rc) < master
+# This should have been fixed in v4
+#
+# The sorting should be feature (alpha|a) < develop (ci|dev|beta) < release|hotfix (rc) < master
+#
+# About Git commit counters: getting a commit counter from git is easy and fast, even for 
+# very large repos: 
+#      git rev-list master --count 
+# or for all commits on a particular branch
+#      git rev-list branch ^master --count
+# Also read https://github.com/GitTools/GitVersion/issues/889
 assembly-versioning-scheme: None
 mode: ContinuousDeployment
 #next-version: 1.0.0

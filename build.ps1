@@ -44,6 +44,7 @@ http://cakebuild.net
 Param(
     [string]$Script = "build.cake",
     [string]$Target = "Default",
+    [ValidateSet("Release", "Debug")]
     [string]$Configuration = "Release",
     [ValidateSet("Quiet", "Minimal", "Normal", "Verbose", "Diagnostic")]
     [string]$Verbosity = "Verbose",
@@ -56,6 +57,114 @@ Param(
     [Parameter(Position=0,Mandatory=$false,ValueFromRemainingArguments=$true)]
     [string[]]$ScriptArgs
 )
+
+$PSScriptRoot = split-path -parent $MyInvocation.MyCommand.Definition;
+
+# Tree
+$TOOLS_DIR           = Join-Path $PSScriptRoot "tools"
+$NUGET_EXE           = Join-Path $TOOLS_DIR "nuget.exe"
+$CAKE_EXE            = Join-Path $TOOLS_DIR "Cake/Cake.exe"
+$PACKAGES_CONFIG     = Join-Path $TOOLS_DIR "packages.config" # containing Cake dependency
+$PACKAGES_CONFIG_MD5 = Join-Path $TOOLS_DIR "packages.config.md5sum"
+
+# Maxfire.CakeScripts version can be pinned
+$CakeScriptsVersion = "latest" # 'latest' or 'major.minor.patch'
+
+$DotNetChannel = "preview";
+$DotNetVersion = "1.0.0-preview2-003121";
+$DotNetInstallerUri = "https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0-preview2/scripts/obtain/dotnet-install.ps1";
+
+$NugetUrl = "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
+
+# Should we use mono?
+$UseMono = "";
+if($Mono.IsPresent) {
+    Write-Verbose -Message "Using the Mono based scripting engine."
+    $UseMono = "-mono"
+}
+
+# Should we use the new Roslyn?
+$UseExperimental = "";
+if($Experimental.IsPresent -and (-not ($Mono.IsPresent))) {
+    Write-Verbose -Message "Using experimental version of Roslyn."
+    $UseExperimental = "-experimental"
+}
+
+# Is this a dry run?
+$UseDryRun = "";
+if($WhatIf.IsPresent) {
+    Write-Verbose -Message "Performs a dry run of the build script."
+    $UseDryRun = "-dryrun"
+}
+
+# Make sure tools folder exists
+if ((Test-Path $PSScriptRoot) -and (-not (Test-Path $TOOLS_DIR))) {
+    Write-Verbose -Message "Creating tools directory..."
+    New-Item -Path $TOOLS_DIR -Type directory | out-null
+}
+
+###########################################################################
+# Install .NET Core CLI
+###########################################################################
+
+Function Remove-PathVariable([string]$VariableToRemove)
+{
+    $path = [Environment]::GetEnvironmentVariable("PATH", "User")
+    if ($path -ne $null)
+    {
+        $newItems = $path.Split(';', [StringSplitOptions]::RemoveEmptyEntries) | Where-Object { "$($_)" -inotlike $VariableToRemove }
+        [Environment]::SetEnvironmentVariable("PATH", [System.String]::Join(';', $newItems), "User")
+    }
+
+    $path = [Environment]::GetEnvironmentVariable("PATH", "Process")
+    if ($path -ne $null)
+    {
+        $newItems = $path.Split(';', [StringSplitOptions]::RemoveEmptyEntries) | Where-Object { "$($_)" -inotlike $VariableToRemove }
+        [Environment]::SetEnvironmentVariable("PATH", [System.String]::Join(';', $newItems), "Process")
+    }
+}
+
+# Get .NET Core CLI version if installed.
+$FoundDotNetCliVersion = $null;
+if (Get-Command dotnet -ErrorAction SilentlyContinue) {
+    $FoundDotNetCliVersion = dotnet --version;
+}
+
+# If version mismatch install dotnetcli locally
+if ($FoundDotNetCliVersion -ne $DotNetVersion) {
+    Write-Verbose -Message "Installing .NET Core SDK Binaries..."
+    $InstallPath = Join-Path $PSScriptRoot ".dotnet"
+    if (!(Test-Path $InstallPath)) {
+        mkdir -Force $InstallPath | Out-Null;
+    }
+    # The remote server returned an error: (407) Proxy Authentication Required, if behind proxy
+    (New-Object System.Net.WebClient).DownloadFile($DotNetInstallerUri, "$InstallPath\dotnet-install.ps1");
+    & $InstallPath\dotnet-install.ps1 -Channel $DotNetChannel -Version $DotNetVersion -InstallDir $InstallPath -NoPath;
+
+    Remove-PathVariable "$InstallPath"
+    $env:PATH = "$InstallPath;$env:PATH"
+    $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 # Caching packages on a temporary build machine is a waste of time.
+    $env:DOTNET_CLI_TELEMETRY_OPTOUT=1       # opt out of telemetry
+
+    & "$InstallPath\dotnet.exe" --info
+}
+
+###########################################################################
+# Install Nuget
+###########################################################################
+
+if (-not (Test-Path $NUGET_EXE)) {
+    Write-Verbose -Message "Downloading NuGet.exe..."
+    try {
+        Invoke-WebRequest $NugetUrl -OutFile $NUGET_EXE
+    } catch {
+        Throw "Could not download NuGet.exe."
+    }
+}
+
+###########################################################################
+# Install Cake and CakeScripts (i.e. tools)
+###########################################################################
 
 [Reflection.Assembly]::LoadWithPartialName("System.Security") | Out-Null
 function MD5HashFile([string] $filePath)
@@ -82,57 +191,6 @@ function MD5HashFile([string] $filePath)
     }
 }
 
-$PSScriptRoot = split-path -parent $MyInvocation.MyCommand.Definition;
-
-# Tree
-$BUILD_DIR           = Join-Path $PSScriptRoot "build" # build scripts, maybe rename
-$TOOLS_DIR           = Join-Path $PSScriptRoot ".tools"
-$NUGET_EXE           = Join-Path $TOOLS_DIR "nuget.exe"
-$CAKE_EXE            = Join-Path $TOOLS_DIR "Cake/Cake.exe"
-$PACKAGES_CONFIG     = Join-Path $BUILD_DIR "packages.config" # containing Cake dependency
-$PACKAGES_CONFIG_MD5 = Join-Path $TOOLS_DIR "packages.config.md5sum"
-
-# Aliases for the entire powershell session
-Set-Alias nuget $NUGET_EXE -scope global
-Set-Alias cake  $CAKE_EXE -scope global
-
-# Should we use mono?
-$UseMono = "";
-if($Mono.IsPresent) {
-    Write-Verbose -Message "Using the Mono based scripting engine."
-    $UseMono = "-mono"
-}
-
-# Should we use the new Roslyn?
-$UseExperimental = "";
-if($Experimental.IsPresent -and (-not ($Mono.IsPresent))) {
-    Write-Verbose -Message "Using experimental version of Roslyn."
-    $UseExperimental = "-experimental"
-}
-
-# Is this a dry run?
-$UseDryRun = "";
-if($WhatIf.IsPresent) {
-    Write-Verbose -Message "Performs a dry run of the build script."
-    $UseDryRun = "-dryrun"
-}
-
-# Make sure .tools folder exists
-if ((Test-Path $PSScriptRoot) -and (-not (Test-Path $TOOLS_DIR))) {
-    Write-Verbose -Message "Creating tools directory..."
-    New-Item -Path $TOOLS_DIR -Type directory | out-null
-}
-
-# Download NuGet if it does not exist.
-if (-not (Test-Path $NUGET_EXE)) {
-    Write-Verbose -Message "Downloading NuGet.exe..."
-    try {
-        Invoke-WebRequest "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe" -OutFile $NUGET_EXE
-    } catch {
-        Throw "Could not download NuGet.exe."
-    }
-}
-
 # Install/restore tools (i.e. Cake) using NuGet
 if(-not $SkipToolPackageRestore.IsPresent) {
     Push-Location
@@ -142,12 +200,12 @@ if(-not $SkipToolPackageRestore.IsPresent) {
     [string] $md5Hash = MD5HashFile $PACKAGES_CONFIG
     if ( (-not (Test-Path $PACKAGES_CONFIG_MD5)) -Or
       ($md5Hash -ne (Get-Content $PACKAGES_CONFIG_MD5 )) ) {
-        Write-Verbose -Message "Missing or changed packages.config hash..."
-        Remove-Item * -Recurse -Exclude nuget.exe # remove installed tools (ie. cake)
+        Write-Verbose -Message "Missing or changed $PACKAGES_CONFIG_MD5 file..."
+        Remove-Item * -Recurse -Exclude packages.config,nuget.exe # remove installed tools (ie. Cake and Maxfire.CakeScripts)
     }
 
     Write-Verbose -Message "Restoring tools from NuGet..."
-    $NuGetOutput = &nuget install $PACKAGES_CONFIG -ExcludeVersion -OutputDirectory `"$TOOLS_DIR`"
+    $NuGetOutput = & $NUGET_EXE install $PACKAGES_CONFIG -ExcludeVersion -OutputDirectory `"$TOOLS_DIR`" -Source https://api.nuget.org/v3/index.json
     if ($LASTEXITCODE -ne 0) {
         Throw "An error occured while restoring NuGet tools."
     }
@@ -158,6 +216,25 @@ if(-not $SkipToolPackageRestore.IsPresent) {
     }
 
     Write-Verbose -Message ($NuGetOutput | out-string)
+
+    # Install re-usable cake scripts, using the latest version
+    # Note: We cannot put the package reference into ./tools/packages.json, because this file does not support floating versions
+    if (-not (Test-Path (Join-Path $TOOLS_DIR 'Maxfire.CakeScripts'))) {
+        if ( ($CakeScriptsVersion -eq "latest") -or [string]::IsNullOrWhitespace($CakeScriptsVersion) ) {
+            $NuGetOutput = & $NUGET_EXE install Maxfire.CakeScripts -ExcludeVersion -Prerelease -OutputDirectory `"$TOOLS_DIR`" -Source https://www.myget.org/F/maxfire/api/v3/index.json
+        }
+        else {
+            $NuGetOutput = & $NUGET_EXE install Maxfire.CakeScripts -Version $CakeScriptsVersion -ExcludeVersion -Prerelease -OutputDirectory `"$TOOLS_DIR`" -Source https://www.myget.org/F/maxfire/api/v3/index.json
+        }
+        if ($LASTEXITCODE -ne 0) {
+            Throw "An error occured while restoring Maxfire.CakeScripts."
+        }
+        else
+        {
+            Write-Verbose -Message ($NuGetOutput | out-string)
+        }
+    }
+
     Pop-Location
 }
 
@@ -166,16 +243,20 @@ if (-not (Test-Path $CAKE_EXE)) {
     Throw "Could not find Cake.exe at $CAKE_EXE"
 }
 
-# Start Cake
-if($ShowVersion.IsPresent) {
-    &cake -version
+
+###########################################################################
+# RUN BUILD SCRIPT
+###########################################################################
+
+if ($ShowVersion.IsPresent) {
+    & $CAKE_EXE -version
 }
 else {
     Write-Host "Running build script..."
     # C# v6 features (e.g. string interpolation) are not supported without '-experimental' flag
     #   See https://github.com/cake-build/cake/issues/293
     #   See https://github.com/cake-build/cake/issues/326
-    #&cake $Script -experimental -target="$Target" -configuration="$Configuration" -verbosity="$Verbosity" $UseMono $UseDryRun $UseExperimental $ScriptArgs
-    &cake $Script -target="$Target" -configuration="$Configuration" -verbosity="$Verbosity" $UseMono $UseDryRun $UseExperimental $ScriptArgs
+    #& $CAKE_EXE $Script -experimental -target="$Target" -configuration="$Configuration" -verbosity="$Verbosity" $UseMono $UseDryRun $UseExperimental $ScriptArgs
+    & $CAKE_EXE $Script -target="$Target" -configuration="$Configuration" -verbosity="$Verbosity" $UseMono $UseDryRun $UseExperimental $ScriptArgs
 }
 exit $LASTEXITCODE
