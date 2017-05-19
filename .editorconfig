@@ -11,5 +11,6 @@ charset = utf-8
 indent_style = space
 indent_size = 4
 
+# Bash cannot handle CRLF line endings
 [*.sh]
 end_of_line = cr

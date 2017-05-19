@@ -17,9 +17,6 @@ addons:
     - libunwind8
     - zlib1g
 
-env:
-  - CLI_VERSION=1.0.0-preview2-003121
-
 mono:
   - latest
 
