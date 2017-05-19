@@ -7,26 +7,11 @@
 ///////////////////////////////////////////////////////////////////////////////
 // SCRIPTS
 ///////////////////////////////////////////////////////////////////////////////
-// #load "./tools/Maxfire.CakeScripts/content/all.cake"
-
-// TODO: Use all.cake when fixed
-#load "./tools/Maxfire.CakeScripts/content/failurehelpers.cake"
-#load "./tools/Maxfire.CakeScripts/content/githubrepository.cake"
-#load "./tools/Maxfire.CakeScripts/content/gitrepoinfo.cake"
-#load "./tools/Maxfire.CakeScripts/content/gitversioninfo.cake"
-#load "./tools/Maxfire.CakeScripts/content/main.cake"
-#load "./tools/Maxfire.CakeScripts/content/parameters.cake"
-#load "./tools/Maxfire.CakeScripts/content/paths.cake"
-#load "./tools/Maxfire.CakeScripts/content/projectjson.cake"
-#load "./tools/Maxfire.CakeScripts/content/runhelpers.cake"
-#load "./tools/Maxfire.CakeScripts/content/settings.cake"
-#load "./tools/Maxfire.CakeScripts/content/toolrunner.cake"
-#load "./tools/Maxfire.CakeScripts/content/utils.cake"
+#load "./tools/Maxfire.CakeScripts/content/all.cake"
 
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBAL VARIABLES
 ///////////////////////////////////////////////////////////////////////////////
-var useSystemDotNetPath = true; // TODO: remove this after upgrading CakeScripts or always using system/global dotnet
 
 var parameters = CakeScripts.GetParameters(
     Context,            // ICakeContext
@@ -35,7 +20,6 @@ var parameters = CakeScripts.GetParameters(
     {
         MainRepositoryOwner = "maxild",
         RepositoryName = "Prelude",
-        UseSystemDotNetPath = useSystemDotNetPath
     },
     new BuildPathSettings
     {
@@ -110,14 +94,12 @@ Task("Clean")
     .IsDependentOn("Clear-Artifacts");
 
 Task("Restore")
-    .IsDependentOn("InstallDotNet")
     .Does(() =>
 {
     Information("Restoring packages...");
 
     DotNetCoreRestore("./", new DotNetCoreRestoreSettings
     {
-        ToolPath = useSystemDotNetPath ? null : parameters.Paths.Tools.DotNet,
         Verbose = false,
         Verbosity = DotNetCoreRestoreVerbosity.Minimal
     });
@@ -141,7 +123,6 @@ Task("Build")
     foreach (var project in GetFiles("./**/project.json"))
     {
         DotNetCoreBuild(project.GetDirectory().FullPath, new DotNetCoreBuildSettings {
-            ToolPath = useSystemDotNetPath ? null : parameters.Paths.Tools.DotNet,
             VersionSuffix = parameters.VersionInfo.VersionSuffix,
             Configuration = parameters.Configuration
         });
@@ -186,8 +167,6 @@ Task("Test")
 {
     var results = new List<TestResult>();
 
-    var dotnet = useSystemDotNetPath ? "dotnet" : MakeAbsolute(parameters.Paths.Tools.DotNet).FullPath;
-
     foreach (var testPrj in GetFiles(string.Format("{0}/**/project.json", parameters.Paths.Directories.Test)))
     {
         Information("Run tests in {0}", testPrj);
@@ -197,7 +176,7 @@ Task("Test")
 
         if (IsRunningOnWindows())
         {
-            int exitCode = Run(dotnet, string.Format("test {0} --configuration {1}", testPrj, parameters.Configuration));
+            int exitCode = Run("dotnet", string.Format("test {0} --configuration {1}", testPrj, parameters.Configuration));
             FailureHelper.ExceptionOnError(exitCode, string.Format("Failed to run tests on Core CLR in {0}.", testPrjDir));
         }
         else
@@ -205,14 +184,14 @@ Task("Test")
             // Ideally we would use the 'dotnet test' command to test both netcoreapp1.0 (CoreCLR)
             // and net452 (Mono), but this currently doesn't work due to
             //    https://github.com/dotnet/cli/issues/3073
-            int exitCode1 = Run(dotnet, string.Format("test {0} --configuration {1} --framework netcoreapp1.0", testPrj, parameters.Configuration));
+            int exitCode1 = Run("dotnet", string.Format("test {0} --configuration {1} --framework netcoreapp1.0", testPrj, parameters.Configuration));
             //FailureHelper.ExceptionOnError(exitCode1, string.Format("Failed to run tests on Core CLR in {0}.", testPrjDir));
             results.Add(new TestResult(string.Format("CoreCLR: {0}", testPrjName), exitCode1));
 
             // Instead we run xUnit.net .NET CLI test runner directly with mono for the net452 target framework
 
             // Build using .NET CLI
-            int exitCode2 = Run(dotnet, string.Format("build {0} --configuration {1} --framework net452", testPrj, parameters.Configuration));
+            int exitCode2 = Run("dotnet", string.Format("build {0} --configuration {1} --framework net452", testPrj, parameters.Configuration));
             FailureHelper.ExceptionOnError(exitCode2, string.Format("Failed to build tests on Desktop CLR in {0}.", testPrjDir));
 
             // Shell() helper does not support running mono, so we glob here
@@ -257,7 +236,6 @@ Task("Package")
         Information("Build nupkg in {0}", project.GetDirectory());
 
         DotNetCorePack(project.GetDirectory().FullPath, new DotNetCorePackSettings {
-            ToolPath = useSystemDotNetPath ? null : parameters.Paths.Tools.DotNet,
             VersionSuffix = parameters.VersionInfo.VersionSuffix,
             Configuration = parameters.Configuration,
             OutputDirectory = parameters.Paths.Directories.Artifacts,
@@ -439,61 +417,6 @@ Task("Generate-CommonAssemblyInfo")
         System.IO.File.WriteAllText(parameters.Paths.Files.CommonAssemblyInfo.FullPath, content, Encoding.UTF8);
         //System.IO.File.WriteAllText(System.IO.Path.Combine(project.GetDirectory().FullPath, "Properties" , "AssemblyVersionInfo.cs"), content, Encoding.UTF8);
     }
-});
-
-Task("InstallDotNet")
-    .WithCriteria(() => !useSystemDotNetPath)
-    .Does(() =>
-{
-    Information("Installing .NET Core SDK Binaries...");
-
-    // TODO: These are part of BuildSettings in CakeScripts, but are unused. We therefore duplicate them here
-    var DotNetCliInstallScriptUrl = "https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0-preview2/scripts/obtain";
-    var DotNetCliBranch = "1.0.0-preview2"; // Note: branch of dotnet cli is '1.0.0-preview2'
-    var DotNetCliChannel = "preview";
-    var DotNetCliVersion = "1.0.0-preview2-003121";
-
-    var ext = IsRunningOnWindows() ? "ps1" : "sh";
-    var installScript = string.Format("dotnet-install.{0}", ext);
-    var installScriptDownloadUrl = string.Format("{0}/{1}", DotNetCliInstallScriptUrl, installScript);
-    var dotnetInstallScript = MakeAbsolute(parameters.Paths.Directories.DotNet.CombineWithFilePath(installScript)).FullPath;
-    //var dotnetInstallScript = System.IO.Path.Combine(parameters.Paths.Directories.DotNet.FullPath, installScript);
-
-    CreateDirectory(parameters.Paths.Directories.DotNet);
-
-    // TODO: wget(installScriptDownloadUrl, dotnetInstallScript)
-    // TODO: The remote server returned an error: (407) Proxy Authentication Required => bluecoat problems
-    using (var client = new System.Net.WebClient())
-    {
-        client.DownloadFile(installScriptDownloadUrl, dotnetInstallScript);
-    }
-
-    if (IsRunningOnUnix())
-    {
-        Shell(string.Format("chmod +x {0}", dotnetInstallScript));
-    }
-
-    // Run the dotnet-install.{ps1|sh} script.
-    // Note: The script will bypass if the version of the SDK has already been downloaded
-    Shell(string.Format("{0} -Channel {1} -Version {2} -InstallDir {3} -NoPath", dotnetInstallScript, DotNetCliChannel, DotNetCliVersion, parameters.Paths.Directories.DotNet));
-
-    if (!FileExists(parameters.Paths.Tools.DotNet))
-    {
-        throw new Exception(string.Format("Unable to find {0}. The dotnet CLI install may have failed.", parameters.Paths.Tools.DotNet));
-    }
-
-    var dotnet = useSystemDotNetPath ? "dotnet" : MakeAbsolute(parameters.Paths.Tools.DotNet).FullPath;
-
-    try
-    {
-        Run(dotnet, "--info");
-    }
-    catch
-    {
-        throw new Exception("dotnet --info have failed to execute. The dotnet CLI install may have failed.");
-    }
-
-    Information(".NET Core SDK install was succesful!");
 });
 
 Task("Clear-PackageCache")

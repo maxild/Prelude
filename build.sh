@@ -9,11 +9,18 @@
 # Define directories.
 SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
+DOTNET_DIR="$SCRIPT_DIR/.dotnet"
 TOOLS_DIR="$SCRIPT_DIR/tools"
 NUGET_EXE="$TOOLS_DIR/nuget.exe"
 CAKE_EXE="$TOOLS_DIR/Cake/Cake.exe"
 PACKAGES_CONFIG="$TOOLS_DIR/packages.config"
 PACKAGES_CONFIG_MD5="$TOOLS_DIR/packages.config.md5sum"
+
+DOTNET_CHANNEL = "preview"
+DOTNET_VERSION = "1.0.0-preview2-003121"
+DOTNET_CHANNEL_INSTALLER_URL = "https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0-preview2/scripts/obtain/dotnet-install.sh"
+
+$NUGET_URL = "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
 
 # Define md5sum or md5 depending on Linux/OSX
 MD5_EXE=
@@ -52,15 +59,40 @@ if [ ! -d "$TOOLS_DIR" ]; then
   mkdir "$TOOLS_DIR"
 fi
 
+###########################################################################
+# Install .NET Core CLI
+###########################################################################
+
+echo "Installing .NET Core SDK Binaries..."
+if [ ! -d "$SCRIPT_DIR/.dotnet" ]; then
+  mkdir "$SCRIPT_DIR/.dotnet"
+fi
+curl -Lsfo "$DOTNET_DIR/dotnet-install.sh" "$DOTNET_CHANNEL_INSTALLER_URL"
+sudo chmod +x "$DOTNET_DIR/dotnet-install.sh"
+sudo bash "$DOTNET_DIR/dotnet-install.sh" --channel "$DOTNET_CHANNEL" --version "$DOTNET_VERSION" --install-dir "$DOTNET_DIR" --no-path
+export PATH="$DOTNET_DIR":$PATH
+export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+export DOTNET_CLI_TELEMETRY_OPTOUT=1
+"$DOTNET_DIR/dotnet" --info
+
+###########################################################################
+# INSTALL NUGET
+###########################################################################
+
 # Download NuGet if it does not exist.
 if [ ! -f "$NUGET_EXE" ]; then
     echo "Downloading NuGet..."
-    curl -Lsfo "$NUGET_EXE" https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
+
+    curl -Lsfo "$NUGET_EXE" "$NUGET_URL"
     if [ $? -ne 0 ]; then
         echo "An error occured while downloading nuget.exe."
         exit 1
     fi
 fi
+
+###########################################################################
+# INSTALL CAKE
+###########################################################################
 
 # Install/restore tools (i.e. Cake) using NuGet
 pushd "$TOOLS_DIR" >/dev/null
@@ -92,6 +124,10 @@ if [ ! -f "$CAKE_EXE" ]; then
     echo "Could not find Cake.exe at '$CAKE_EXE'."
     exit 1
 fi
+
+###########################################################################
+# RUN BUILD SCRIPT
+###########################################################################
 
 # Start Cake
 if $SHOW_VERSION; then
