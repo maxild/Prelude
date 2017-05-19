@@ -10,11 +10,11 @@
 // #load "./tools/Maxfire.CakeScripts/content/all.cake"
 
 // TODO: Use all.cake when fixed
-#load "./tools/Maxfire.CakeScripts/content/CakeScriptsVersion.cake"
 #load "./tools/Maxfire.CakeScripts/content/failurehelpers.cake"
 #load "./tools/Maxfire.CakeScripts/content/githubrepository.cake"
 #load "./tools/Maxfire.CakeScripts/content/gitrepoinfo.cake"
 #load "./tools/Maxfire.CakeScripts/content/gitversioninfo.cake"
+#load "./tools/Maxfire.CakeScripts/content/main.cake"
 #load "./tools/Maxfire.CakeScripts/content/parameters.cake"
 #load "./tools/Maxfire.CakeScripts/content/paths.cake"
 #load "./tools/Maxfire.CakeScripts/content/projectjson.cake"
@@ -28,7 +28,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 var useSystemDotNetPath = true; // TODO: remove this after upgrading CakeScripts or always using system/global dotnet
 
-var parameters = BuildParameters.GetParameters(
+var parameters = CakeScripts.GetParameters(
     Context,            // ICakeContext
     BuildSystem,        // BuildSystem alias
     new BuildSettings   // My personal overrides
