@@ -7,7 +7,21 @@
 ///////////////////////////////////////////////////////////////////////////////
 // SCRIPTS
 ///////////////////////////////////////////////////////////////////////////////
-#load "./tools/Maxfire.CakeScripts/content/all.cake"
+// #load "./tools/Maxfire.CakeScripts/content/all.cake"
+
+// TODO: Use all.cake when fixed
+#load "./tools/Maxfire.CakeScripts/content/CakeScriptsVersion.cake"
+#load "./tools/Maxfire.CakeScripts/content/failurehelpers.cake"
+#load "./tools/Maxfire.CakeScripts/content/githubrepository.cake"
+#load "./tools/Maxfire.CakeScripts/content/gitrepoinfo.cake"
+#load "./tools/Maxfire.CakeScripts/content/gitversioninfo.cake"
+#load "./tools/Maxfire.CakeScripts/content/parameters.cake"
+#load "./tools/Maxfire.CakeScripts/content/paths.cake"
+#load "./tools/Maxfire.CakeScripts/content/projectjson.cake"
+#load "./tools/Maxfire.CakeScripts/content/runhelpers.cake"
+#load "./tools/Maxfire.CakeScripts/content/settings.cake"
+#load "./tools/Maxfire.CakeScripts/content/toolrunner.cake"
+#load "./tools/Maxfire.CakeScripts/content/utils.cake"
 
 ///////////////////////////////////////////////////////////////////////////////
 // GLOBAL VARIABLES
