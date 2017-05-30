@@ -78,17 +78,6 @@ Task("ReleaseNotes")
 Task("Clean")
     .IsDependentOn("Clear-Artifacts");
 
-Task("CakeScripts")
-    .Does(() =>
-{
-    var dirToDelete = parameters.Paths.Directories.BuildTools.Combine("Maxfire.CakeScripts");
-    if (DirectoryExists(dirToDelete))
-    {
-        DeleteDirectory(dirToDelete, true);
-    }
-});
-
-
 Task("Restore")
     .Does(() =>
 {
@@ -222,7 +211,7 @@ Task("Package")
 // Debug builds are published to MyGet CI feed
 Task("Publish-CIFeed-MyGet")
     .IsDependentOn("Package")
-    .WithCriteria(() => parameters.ConfigurationIsDebug())
+    .WithCriteria(() => parameters.ConfigurationIsDebug)
     .WithCriteria(() => parameters.ShouldDeployToCIFeed)
     .Does(() =>
 {
@@ -248,7 +237,7 @@ Task("Publish-CIFeed-MyGet")
 // Release builds are published to NuGet.Org production feed
 Task("Publish-ProdFeed-NuGet")
     .IsDependentOn("Package")
-    .WithCriteria(() => parameters.ConfigurationIsRelease())
+    .WithCriteria(() => parameters.ConfigurationIsRelease)
     .WithCriteria(() => parameters.ShouldDeployToProdFeed)
     .Does(() =>
 {
@@ -300,7 +289,7 @@ Task("Create-Release-Notes")
 Task("Publish-GitHub-Release")
     .IsDependentOn("Package")
     .WithCriteria(() => parameters.ShouldDeployToProdFeed)
-    .WithCriteria(() => parameters.ConfigurationIsRelease())
+    .WithCriteria(() => parameters.ConfigurationIsRelease)
     .Does(() =>
 {
     // TODO: Both NAME.nupkg and NAME.symbols.nupkg?
@@ -328,8 +317,8 @@ Task("Publish-GitHub-Release")
 Task("Upload-AppVeyor-Artifacts")
     .IsDependentOn("Package")
     .WithCriteria(() => parameters.IsRunningOnAppVeyor)
-    .WithCriteria(() => parameters.IsReleaseLineBranch && parameters.ConfigurationIsRelease)
-    .WithCriteria(() => parameters.IsDevelopmentLineBranch && parameters.ConfigurationIsDebug)
+    .WithCriteria(() => parameters.Git.IsReleaseLineBranch && parameters.ConfigurationIsRelease)
+    .WithCriteria(() => parameters.Git.IsDevelopmentLineBranch && parameters.ConfigurationIsDebug)
     .Does(() =>
 {
     // TODO: Both NAME.nupkg and NAME.symbols.nupkg?
