@@ -3,6 +3,16 @@
 # We use image with preinstalled .NET Core SDK, because we also need net452
 os: Visual Studio 2015
 
+environment:
+  github_password:
+    secure: MSpb924hdiyXPSuUSzWG/w==
+  # MyGet apikey
+  CI_DEPLOYMENT_API_KEY:
+    secure: EOVLFyiHRhh9Jij3/mITdSV5JH1SzT8JUbqqTIFtvOPndNeMme3mME01ws3+5nFB
+  # NuGet.org apikey
+  DEPLOYMENT_API_KEY:
+    secure: DInFdMch2u8btkaNWMOPYOsnV6eknvY0rJvdxIkCi3Sijxc+b6i8a7142SbWtzBK
+
 init:
   - git config --global core.autocrlf input
 
@@ -12,30 +22,4 @@ build_script:
 
 test: off
 
-artifacts:
-- path: artifacts\**\*.nupkg
-  name: Packages
-
-deploy:
-# Deploy to Myget on every push to Github
-- provider: NuGet
-  name: CI-feed
-  server: https://www.myget.org/F/maxfire-ci/api/v2/package
-  api_key:
-    secure: EOVLFyiHRhh9Jij3/mITdSV5JH1SzT8JUbqqTIFtvOPndNeMme3mME01ws3+5nFB
-  skip_symbols: true
-  artifact: Packages
-  on:
-    branch: /^(?!.*master).*$/ # except master
-# Deploy to NuGet.org only on tagged master branch pushes to Github
-- provider: NuGet
-  name: Production-feed
-  api_key:
-    secure: DInFdMch2u8btkaNWMOPYOsnV6eknvY0rJvdxIkCi3Sijxc+b6i8a7142SbWtzBK
-  skip_symbols: true
-  artifact: Packages
-  on:
-    # When branch is not sent in webhook payload (base_ref == null, when not using Web UI)
-    # it's set to tag name. See http://help.appveyor.com/discussions/questions/1635-github-deploy-with-condition-branch-master
-    branch: /v\d+\.\d+\.\d+/   # only deploy non-prerelease versions
-    appveyor_repo_tag: true    # deploy on tag push only
+deploy: off
