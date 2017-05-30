@@ -20,10 +20,8 @@ var parameters = CakeScripts.GetParameters(
     {
         MainRepositoryOwner = "maxild",
         RepositoryName = "Prelude",
-    },
-    new BuildPathSettings
-    {
-        BuildToolsDir = "./tools"
+        DeployToCIFeedUrl = "https://www.myget.org/F/maxfire-ci/api/v2/package", // MyGet feed url
+        DeployToProdFeedUrl = "https://www.nuget.org/api/v2/package"             // NuGet.org feed url
     });
 bool publishingError = false;
 
@@ -52,19 +50,19 @@ Setup(context =>
 ///////////////////////////////////////////////////////////////////////////////
 
 Task("Default")
-    .IsDependentOn("Show-Info")
-    .IsDependentOn("Print-AppVeyor-Environment-Variables")
     .IsDependentOn("Package");
 
 Task("Travis")
     .IsDependentOn("Show-Info")
-    .IsDependentOn("Package");
+    .IsDependentOn("Test");
 
 Task("AppVeyor")
     .IsDependentOn("Show-Info")
     .IsDependentOn("Print-AppVeyor-Environment-Variables")
     .IsDependentOn("Package")
     .IsDependentOn("Upload-AppVeyor-Artifacts")
+    .IsDependentOn("Publish-CIFeed-MyGet")
+    .IsDependentOn("Publish-ProdFeed-NuGet")
     .IsDependentOn("Publish-GitHub-Release")
     .Finally(() =>
 {
@@ -73,6 +71,12 @@ Task("AppVeyor")
         throw new Exception("An error occurred during the publishing of " + parameters.ProjectName + ".  All publishing tasks have been attempted.");
     }
 });
+
+Task("ReleaseNotes")
+    .IsDependentOn("Create-Release-Notes");
+
+Task("Clean")
+    .IsDependentOn("Clear-Artifacts");
 
 Task("CakeScripts")
     .Does(() =>
@@ -84,26 +88,18 @@ Task("CakeScripts")
     }
 });
 
-Task("ReleaseNotes")
-    .IsDependentOn("Create-Release-Notes");
-
-Task("Clean")
-    .IsDependentOn("Clear-Artifacts");
 
 Task("Restore")
     .Does(() =>
 {
-    Information("Restoring packages...");
-
     DotNetCoreRestore("./", new DotNetCoreRestoreSettings
     {
         Verbose = false,
         Verbosity = DotNetCoreRestoreVerbosity.Minimal
     });
-
-    Information("Package restore was successful!");
 });
 
+// TODO: Move to Lofus
 Task("Restore2")
     .Does(() =>
 {
@@ -126,6 +122,7 @@ Task("Build")
     }
 });
 
+// TODO: Move to Lofus
 Task("Build2")
     .IsDependentOn("Generate-CommonAssemblyInfo")
     .IsDependentOn("Restore2")
@@ -144,76 +141,58 @@ Task("Build2")
     );
 });
 
-public class TestResult
-{
-    private readonly string _msg;
-    public TestResult(string msg, int exitCode)
-    {
-        _msg = msg;
-        ExitCode = exitCode;
-    }
-
-    public int ExitCode { get; private set; }
-    public bool Failed { get { return ExitCode != 0; } }
-    public string ErrorMessage { get { return Failed ? string.Concat("One or more tests did fail on ", _msg) : string.Empty; } }
-}
-
 Task("Test")
     .IsDependentOn("Build")
     .Does(() =>
 {
-    var results = new List<TestResult>();
-
-    foreach (var testPrj in GetFiles(string.Format("{0}/**/project.json", parameters.Paths.Directories.Test)))
+    foreach (var testProject in GetFiles(string.Format("{0}/**/project.json", parameters.Paths.Directories.Test)))
     {
-        Information("Run tests in {0}", testPrj);
-
-        var testPrjDir = testPrj.GetDirectory();
-        var testPrjName = testPrjDir.GetDirectoryName();
-
         if (IsRunningOnWindows())
         {
-            int exitCode = Run("dotnet", string.Format("test {0} --configuration {1}", testPrj, parameters.Configuration));
-            FailureHelper.ExceptionOnError(exitCode, string.Format("Failed to run tests on Core CLR in {0}.", testPrjDir));
+            DotNetCoreTest(testProject.GetDirectory().FullPath, new DotNetCoreTestSettings {
+                Configuration = parameters.Configuration,
+                NoBuild = true,
+                Verbose = false
+            });
         }
         else
         {
             // Ideally we would use the 'dotnet test' command to test both netcoreapp1.0 (CoreCLR)
             // and net452 (Mono), but this currently doesn't work due to
             //    https://github.com/dotnet/cli/issues/3073
-            int exitCode1 = Run("dotnet", string.Format("test {0} --configuration {1} --framework netcoreapp1.0", testPrj, parameters.Configuration));
-            //FailureHelper.ExceptionOnError(exitCode1, string.Format("Failed to run tests on Core CLR in {0}.", testPrjDir));
-            results.Add(new TestResult(string.Format("CoreCLR: {0}", testPrjName), exitCode1));
 
-            // Instead we run xUnit.net .NET CLI test runner directly with mono for the net452 target framework
+            //
+            // .NET Core (on Linux and OS X)
+            //
 
-            // Build using .NET CLI
-            int exitCode2 = Run("dotnet", string.Format("build {0} --configuration {1} --framework net452", testPrj, parameters.Configuration));
-            FailureHelper.ExceptionOnError(exitCode2, string.Format("Failed to build tests on Desktop CLR in {0}.", testPrjDir));
+            DotNetCoreTest(testProject.GetDirectory().FullPath, new DotNetCoreTestSettings {
+                Configuration = parameters.Configuration,
+                Framework = "netcoreapp1.0",
+                NoBuild = true,
+                Verbose = false
+            });
 
-            // Shell() helper does not support running mono, so we glob here
-            var dotnetTestXunit = GetFiles(string.Format("{0}/bin/{1}/net452/*/dotnet-test-xunit.exe", testPrjDir, parameters.Configuration)).First();
-            var dotnetTestAssembly = GetFiles(string.Format("{0}/bin/{1}/net452/*/{2}.dll", testPrjDir, parameters.Configuration, testPrjName)).First();
+            //
+            // Mono (on Linux and OS X)
+            //
 
-            // Run using Mono
-            int exitCode3 = Run("mono", string.Format("{0} {1}", dotnetTestXunit, dotnetTestAssembly));
-            //FailureHelper.ExceptionOnError(exitCode3, string.Format("Failed to run tests on Desktop CLR in {0}.", testPrjDir));
-            results.Add(new TestResult(string.Format("DesktopCLR: {0}", testPrjName), exitCode3));
+            var testProjectPath = testProject.GetDirectory().FullPath;
+            var testProjectName = testProject.GetDirectory().GetDirectoryName();
+
+            var xunitRunner = GetFiles(testProjectPath + "/bin/" + parameters.Configuration + "/net452/*/dotnet-test-xunit.exe").First().FullPath;
+            var testAssembly = GetFiles(testProjectPath + "/bin/" + parameters.Configuration + "/net452/*/" + testProjectName + ".dll").First().FullPath;
+
+            int exitCode = Run("mono", xunitRunner + " " + testAssembly);
+            if (exitCode != 0)
+            {
+                throw new Exception("Tests in '" + testProjectName + "' failed on Mono!");
+            }
 
         }
-
-        if (results.Any(r => r.Failed))
-        {
-            throw new Exception(
-                results.Aggregate(new StringBuilder(), (sb, result) =>
-                    sb.AppendFormat("{0}{1}", result.ErrorMessage, Environment.NewLine)).ToString().TrimEnd()
-                );
-        }
-
-        Information("Tests in {0} was succesful!", testPrj);
     }
 });
 
+// TODO: Move to Lofus
 Task("Test2")
     .IsDependentOn("Build2")
     .Does(() =>
@@ -230,8 +209,6 @@ Task("Package")
 {
     foreach (var project in GetFiles(string.Format("{0}/**/project.json", parameters.Paths.Directories.Src)))
     {
-        Information("Build nupkg in {0}", project.GetDirectory());
-
         DotNetCorePack(project.GetDirectory().FullPath, new DotNetCorePackSettings {
             VersionSuffix = parameters.VersionInfo.VersionSuffix,
             Configuration = parameters.Configuration,
@@ -242,10 +219,60 @@ Task("Package")
     }
 });
 
-Task("Package2")
-    .IsDependentOn("Clear-Artifacts")
-    .IsDependentOn("Test2")
-    .IsDependentOn("Copy-Artifacts");
+// Debug builds are published to MyGet CI feed
+Task("Publish-CIFeed-MyGet")
+    .IsDependentOn("Package")
+    .WithCriteria(() => parameters.ConfigurationIsDebug())
+    .WithCriteria(() => parameters.ShouldDeployToCIFeed)
+    .Does(() =>
+{
+    var packages =
+            GetFiles(parameters.Paths.Directories.Artifacts + "/*.nupkg") -
+            GetFiles(parameters.Paths.Directories.Artifacts + "/*.symbols.nupkg");
+
+    foreach (var package in packages)
+    {
+        NuGetPush(package.FullPath, new NuGetPushSettings {
+            Source = parameters.CIFeed.SourceUrl,
+            ApiKey = parameters.CIFeed.ApiKey,
+            ArgumentCustomization = args => args.Append("-NoSymbols")
+        });
+    }
+})
+.OnError(exception =>
+{
+    Information("Publish-MyGet Task failed, but continuing with next Task...");
+    publishingError = true;
+});
+
+// Release builds are published to NuGet.Org production feed
+Task("Publish-ProdFeed-NuGet")
+    .IsDependentOn("Package")
+    .WithCriteria(() => parameters.ConfigurationIsRelease())
+    .WithCriteria(() => parameters.ShouldDeployToProdFeed)
+    .Does(() =>
+{
+    // Note: NuGet automatically publishes to symbolsource.org automatically if it detects a symbol package
+    // See also https://docs.microsoft.com/en-us/nuget/create-packages/symbol-packages
+
+    var packages =
+            GetFiles(parameters.Paths.Directories.Artifacts + "/*.nupkg") -
+            GetFiles(parameters.Paths.Directories.Artifacts + "/*.symbols.nupkg");
+
+    foreach (var package in packages)
+    {
+        NuGetPush(package.FullPath, new NuGetPushSettings {
+            Source = parameters.ProdFeed.SourceUrl,
+            ApiKey = parameters.ProdFeed.ApiKey,
+            ArgumentCustomization = args => args.Append("-NoSymbols")
+        });
+    }
+})
+.OnError(exception =>
+{
+    Information("Publish-NuGet Task failed, but continuing with next Task...");
+    publishingError = true;
+});
 
 ///////////////////////////////////////////////////////////////////////////////
 // SECONDARY TASKS (indirect targets)
@@ -276,14 +303,13 @@ Task("Publish-GitHub-Release")
     .WithCriteria(() => parameters.ConfigurationIsRelease())
     .Does(() =>
 {
-    if (DirectoryExists(parameters.Paths.Directories.Artifacts))
+    // TODO: Both NAME.nupkg and NAME.symbols.nupkg?
+    foreach (var package in GetFiles(parameters.Paths.Directories.Artifacts + "/*.nupkg"))
     {
-        // TODO: Make this library specific
-        // Add ffv-rtl.exe artifact to the published release
-        //var exeFile = GetFiles(parameters.Paths.Directories.Artifacts + "/*.exe").Single();
-        //GitReleaseManagerAddAssets(parameters.GitHub.UserName, parameters.GitHub.Password,
-        //                            parameters.GitHub.RepositoryOwner, parameters.GitHub.RepositoryName,
-        //                            parameters.VersionInfo.Milestone, exeFile.FullPath);
+        GitReleaseManagerAddAssets(parameters.GitHub.UserName, parameters.GitHub.Password,
+                                   parameters.GitHub.RepositoryOwner, parameters.GitHub.RepositoryName,
+                                   parameters.VersionInfo.Milestone, package.FullPath);
+
     }
 
     // Close the milestone
@@ -295,6 +321,28 @@ Task("Publish-GitHub-Release")
 {
     Information("Publish-GitHub-Release Task failed, but continuing with next Task...");
     publishingError = true;
+});
+
+Task("Upload-AppVeyor-Artifacts")
+    .IsDependentOn("Package")
+    .WithCriteria(() => parameters.IsRunningOnAppVeyor)
+    .Does(() =>
+{
+    // TODO: Both NAME.nupkg and NAME.symbols.nupkg?
+    foreach (var package in GetFiles(parameters.Paths.Directories.Artifacts + "/*.nupkg"))
+    {
+        // appveyor PushArtifact <path> [options] (See https://www.appveyor.com/docs/build-worker-api/#push-artifact)
+        AppVeyor.UploadArtifact(package);
+    }
+});
+
+Task("Clear-Artifacts")
+    .Does(() =>
+{
+    if (DirectoryExists(parameters.Paths.Directories.Artifacts))
+    {
+        DeleteDirectory(parameters.Paths.Directories.Artifacts, true);
+    }
 });
 
 Task("Show-Info")
@@ -310,37 +358,6 @@ Task("Print-AppVeyor-Environment-Variables")
     parameters.PrintAppVeyorEnvironmentVariables();
 });
 
-// appveyor PushArtifact <path> [options] (See https://www.appveyor.com/docs/build-worker-api/#push-artifact)
-Task("Upload-AppVeyor-Artifacts")
-    .IsDependentOn("Package")
-    .WithCriteria(() => parameters.IsRunningOnAppVeyor)
-    .WithCriteria(() => DirectoryExists(parameters.Paths.Directories.Artifacts))
-    .WithCriteria(() => parameters.ConfigurationIsRelease())
-    .Does(() =>
-{
-    // TODO: Make this library specific
-    //var exeFile = GetFiles(parameters.Paths.Directories.Artifacts + "/*.exe").Single();
-    //AppVeyor.UploadArtifact(exeFile);
-});
-
-Task("Clear-Artifacts")
-    .Does(() =>
-{
-    if (DirectoryExists(parameters.Paths.Directories.Artifacts))
-    {
-        DeleteDirectory(parameters.Paths.Directories.Artifacts, true);
-    }
-});
-
-Task("Copy-Artifacts")
-    .Does(() =>
-{
-    EnsureDirectoryExists(parameters.Paths.Directories.Artifacts);
-    // TODO: Make this library specific
-    //CopyFileToDirectory(
-    //    parameters.SrcProject("FFV-RTL.Console").GetBuildArtifact(string.Format("{0}.exe", parameters.ProjectName.ToLower())),
-    //    parameters.Paths.Directories.Artifacts);
-});
 
 Task("Patch-Project-Json")
     .Does(() =>
@@ -372,6 +389,9 @@ Task("Patch-Project-Json")
     }
 });
 
+// TODO: Den benyttes ikke...afventer investigation af tooling (project.json vs csproj, and assemblyinfo attributes)
+// TODO: Skal denne tilfoejes vs2015 solution (dvs xproj), saa skal den kopieres under src, da filer adderes dynamisk
+// TODO: Hvordan indsaettes AssemblyVersion, AssemblyFileVersion og AssemblyInformationalVersion
 Task("Generate-CommonAssemblyInfo")
     .Does(() =>
 {
@@ -411,7 +431,9 @@ Task("Generate-CommonAssemblyInfo")
     var projects = GetFiles("./src/**/project.json");
     foreach (var project in projects)
     {
+        // TODO: Indsaettes som ./Properties/AssemblyVersionInfo.cs i hvert projekt
         System.IO.File.WriteAllText(parameters.Paths.Files.CommonAssemblyInfo.FullPath, content, Encoding.UTF8);
+        //System.IO.File.WriteAllText(System.IO.Path.Combine(parameters.Paths.Directories.Src, "Maxfire.Prelude", "Properties" , "AssemblyVersionInfo.cs"), content, Encoding.UTF8);
         //System.IO.File.WriteAllText(System.IO.Path.Combine(project.GetDirectory().FullPath, "Properties" , "AssemblyVersionInfo.cs"), content, Encoding.UTF8);
     }
 });

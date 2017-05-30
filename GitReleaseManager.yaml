@@ -1,4 +1,5 @@
 issue-labels-include:
+- build
 - bug
 - enhancement
 - feature
@@ -15,7 +16,6 @@ issue-labels-exclude:
 - investigate
 - idea
 - refactoring
-- build
 - workflow
 - tests
 - 'Planning: MilestoneMaster'

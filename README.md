@@ -1,6 +1,6 @@
 # Prelude
 
-The Prelude repository contains extensions to the .NET BCL used by several projects written by Morten Maxild.
+The Prelude repository contains extensions to the .NET Framework 4.5.x BCL and .NET Core 1.0.x BCL used by several projects written by Morten Maxild.
 
 AppVeyor: [![Build Status](https://ci.appveyor.com/api/projects/status/kkcqonha77p6dj2l?svg=true)](https://ci.appveyor.com/project/maxild/prelude)
 
@@ -8,7 +8,7 @@ Travis: [![Build Status](https://travis-ci.org/maxild/Prelude.svg)](https://trav
 
 ## Get Packages
 
-Stable releases can be found on the NuGet gallery. Our CI build also produces packages, that can be found on our MyGet feed.
+Stable releases can be found on NuGet.org. Our CI build also produces packages, that can be found on our MyGet feed.
 
 ### Stable releases
 
@@ -19,7 +19,7 @@ Stable releases are published to [NuGet.org](https://www.nuget.org/packages?q=Ma
 
 ### Unstable releases (pre-releases)
 
-[![MyGet](https://img.shields.io/myget/maxfire-ci/vpre/Maxfire.Prelude.Core.svg?label=Maxfire.Prelude.Core)](https://www.myget.org/gallery/maxfire-ci)
-[![MyGet](https://img.shields.io/myget/maxfire-ci/vpre/Maxfire.Prelude.ComponentModel.TypeConverter.svg?label=Maxfire.Prelude.ComponentModel.TypeConverter)](https://www.myget.org/gallery/maxfire-ci)
+[![MyGet](https://img.shields.io/myget/maxfire-ci/vpre/Maxfire.Prelude.Core.svg?label=Maxfire.Prelude.Core)](https://www.myget.org/feed/maxfire-ci/package/nuget/Maxfire.Prelude.Core)
+[![MyGet](https://img.shields.io/myget/maxfire-ci/vpre/Maxfire.Prelude.ComponentModel.TypeConverter.svg?label=Maxfire.Prelude.ComponentModel.TypeConverter)](https://www.myget.org/feed/maxfire-ci/package/nuget/Maxfire.Prelude.ComponentModel.TypeConverter)
 
 If you're feeling adventurous, [continuous integration builds are on MyGet](https://www.myget.org/gallery/maxfire-ci).
