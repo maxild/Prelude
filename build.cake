@@ -323,9 +323,13 @@ Task("Publish-GitHub-Release")
     publishingError = true;
 });
 
+// Release artifacts are uploaded for release-line branches (master and support), and Debug
+// artifacts are uploaded for non release-line branches (dev, feature etc.).
 Task("Upload-AppVeyor-Artifacts")
     .IsDependentOn("Package")
     .WithCriteria(() => parameters.IsRunningOnAppVeyor)
+    .WithCriteria(() => parameters.IsReleaseLineBranch && parameters.ConfigurationIsRelease)
+    .WithCriteria(() => parameters.IsDevelopmentLineBranch && parameters.ConfigurationIsDebug)
     .Does(() =>
 {
     // TODO: Both NAME.nupkg and NAME.symbols.nupkg?
