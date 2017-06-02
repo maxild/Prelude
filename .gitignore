@@ -3,6 +3,7 @@ artifacts/
 tools/*
 !tools/packages.config
 
+# Assembly Version Patching
 src/CommonAssemblyInfo.cs
 
 # Rider
@@ -18,9 +19,6 @@ src/CommonAssemblyInfo.cs
 /.vs
 *.suo
 *.user
-
-# Assembly Versioning Patching
-src/*/Properties/AssemblyVersionInfo.cs
 
 # Build results
 artifacts/

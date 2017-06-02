@@ -6,7 +6,12 @@
     "nowarn": [
       "CS1591"
     ],
-    "xmlDoc": true
+    "xmlDoc": true,
+    "compile": {
+      "includeFiles": [
+        "../CommonAssemblyInfo.cs"
+      ]
+    }
   },
   "packOptions": {
     "repository": {
