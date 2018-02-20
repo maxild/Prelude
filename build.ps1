@@ -21,6 +21,10 @@ The build script target to run.
 The build configuration to use.
 .PARAMETER Verbosity
 Specifies the amount of information to be displayed.
+.PARAMETER NuGetVersion
+The version of nuget.exe to be downloaded.
+.PARAMETER CakeScriptsVersion
+The version of Maxfire.CakeScripts to be downloaded.
 .PARAMETER ShowVersion
 Show version of Cake tool.
 .PARAMETER Experimental
@@ -48,6 +52,8 @@ Param(
     [string]$Configuration = "Release",
     [ValidateSet("Quiet", "Minimal", "Normal", "Verbose", "Diagnostic")]
     [string]$Verbosity = "Verbose",
+    [string]$NuGetVersion = "latest",
+    [string]$CakeScriptsVersion = "latest",
     [switch]$ShowVersion,
     [switch]$Experimental,
     [Alias("DryRun","Noop")]
@@ -74,7 +80,11 @@ $DotNetChannel = "preview";
 $DotNetVersion = "1.0.0-preview2-003121";
 $DotNetInstallerUri = "https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0-preview2/scripts/obtain/dotnet-install.ps1";
 
-$NugetUrl = "https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
+if ((-not ($NuGetVersion -eq "latest")) -and (-not $NuGetVersion.StartsWith("v"))) {
+    $NuGetVersion = ("v" + $NuGetVersion)
+}
+
+$NugetUrl = "https://dist.nuget.org/win-x86-commandline/$NuGetVersion/nuget.exe"
 
 # Should we use mono?
 $UseMono = "";
@@ -154,12 +164,13 @@ if ($FoundDotNetCliVersion -ne $DotNetVersion) {
 ###########################################################################
 
 if (-not (Test-Path $NUGET_EXE)) {
-    Write-Verbose -Message "Downloading NuGet.exe..."
+    Write-Verbose -Message "Downloading NuGet.exe ($NuGetVersion)..."
     try {
         Invoke-WebRequest $NugetUrl -OutFile $NUGET_EXE
     } catch {
         Throw "Could not download NuGet.exe."
     }
+    Write-Verbose -Message (& $NUGET_EXE help | Select-Object -First 1 | Out-String)
 }
 
 ###########################################################################
@@ -192,7 +203,7 @@ function MD5HashFile([string] $filePath)
 }
 
 # Install/restore tools (i.e. Cake) using NuGet
-if(-not $SkipToolPackageRestore.IsPresent) {
+if (-not $SkipToolPackageRestore.IsPresent) {
     Push-Location
     Set-Location $TOOLS_DIR
 
@@ -207,6 +218,7 @@ if(-not $SkipToolPackageRestore.IsPresent) {
     Write-Verbose -Message "Restoring tools from NuGet..."
     $NuGetOutput = & $NUGET_EXE install $PACKAGES_CONFIG -ExcludeVersion -OutputDirectory `"$TOOLS_DIR`" -Source https://api.nuget.org/v3/index.json
     if ($LASTEXITCODE -ne 0) {
+        Pop-Location
         Throw "An error occured while restoring NuGet tools."
     }
     else
@@ -216,15 +228,19 @@ if(-not $SkipToolPackageRestore.IsPresent) {
     }
 
     Write-Verbose -Message ($NuGetOutput | out-string)
+    Pop-Location
+}
 
-    # Install re-usable cake scripts, using the latest version
-    # Note: We cannot put the package reference into ./tools/packages.json, because this file does not support floating versions
+# Install re-usable cake scripts, using the latest version
+# Note: We cannot put the package reference into ./tools/packages.json, because this file does not support floating versions
+if (-not $SkipToolPackageRestore.IsPresent) {
     if (-not (Test-Path (Join-Path $TOOLS_DIR 'Maxfire.CakeScripts'))) {
+        Write-Verbose -Message "Restoring Maxfire.CakeScripts from MyGet feed..."
         if ( ($CakeScriptsVersion -eq "latest") -or [string]::IsNullOrWhitespace($CakeScriptsVersion) ) {
-            $NuGetOutput = & $NUGET_EXE install Maxfire.CakeScripts -ExcludeVersion -Prerelease -OutputDirectory `"$TOOLS_DIR`" -Source https://www.myget.org/F/maxfire/api/v3/index.json
+            $NuGetOutput = & $NUGET_EXE install Maxfire.CakeScripts -ExcludeVersion -Prerelease -OutputDirectory `"$TOOLS_DIR`" -Source 'https://api.nuget.org/v3/index.json;https://www.myget.org/F/maxfire/api/v3/index.json'
         }
         else {
-            $NuGetOutput = & $NUGET_EXE install Maxfire.CakeScripts -Version $CakeScriptsVersion -ExcludeVersion -Prerelease -OutputDirectory `"$TOOLS_DIR`" -Source https://www.myget.org/F/maxfire/api/v3/index.json
+            $NuGetOutput = & $NUGET_EXE install Maxfire.CakeScripts -Version $CakeScriptsVersion -ExcludeVersion -Prerelease -OutputDirectory `"$TOOLS_DIR`" -Source 'https://api.nuget.org/v3/index.json;https://www.myget.org/F/maxfire/api/v3/index.json'
         }
         if ($LASTEXITCODE -ne 0) {
             Throw "An error occured while restoring Maxfire.CakeScripts."
@@ -234,8 +250,6 @@ if(-not $SkipToolPackageRestore.IsPresent) {
             Write-Verbose -Message ($NuGetOutput | out-string)
         }
     }
-
-    Pop-Location
 }
 
 # Make sure that Cake has been installed.

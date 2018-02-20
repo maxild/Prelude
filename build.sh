@@ -16,14 +16,9 @@ CAKE_EXE="$TOOLS_DIR/Cake/Cake.exe"
 PACKAGES_CONFIG="$TOOLS_DIR/packages.config"
 PACKAGES_CONFIG_MD5="$TOOLS_DIR/packages.config.md5sum"
 
-# Maxfire.CakeScripts version can be pinned
-CAKESCRIPTS_VERSION="latest" # 'latest' or 'major.minor.patch'
-
 DOTNET_CHANNEL="preview"
 DOTNET_VERSION="1.0.0-preview2-003121"
 DOTNET_CHANNEL_INSTALLER_URL="https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0-preview2/scripts/obtain/dotnet-install.sh"
-
-NUGET_URL="https://dist.nuget.org/win-x86-commandline/latest/nuget.exe"
 
 # Define md5sum or md5 depending on Linux/OSX
 MD5_EXE=
@@ -39,6 +34,8 @@ TARGET="Default"
 CONFIGURATION="Release"
 VERBOSITY="verbose"
 DRYRUN=
+NUGET_VERSION="latest"
+CAKESCRIPTS_VERSION="latest"
 SHOW_VERSION=false
 SCRIPT_ARGUMENTS=()
 
@@ -50,12 +47,20 @@ for i in "$@"; do
         -c|--configuration) CONFIGURATION="$2"; shift ;;
         -v|--verbosity) VERBOSITY="$2"; shift ;;
         -d|--dryrun) DRYRUN="--dryrun" ;;
+        --nugetVersion) NUGET_VERSION="$2" ;; shift ;;
+        --cakeScriptsVersion) CAKESCRIPTS_VERSION="$2" ;; shift ;;
         --version) SHOW_VERSION=true ;;
         --) shift; SCRIPT_ARGUMENTS+=("$@"); break ;;
         *) SCRIPT_ARGUMENTS+=("$1") ;;
     esac
     shift
 done
+
+if [[ $NUGET_VERSION != "latest" ]] && [[ $NUGET_VERSION =~ ^v.* ]]; then
+    $NUGET_VERSION="v$NUGET_VERSION"
+fi
+
+NUGET_URL="https://dist.nuget.org/win-x86-commandline/$NUGET_VERSION/nuget.exe"
 
 # Make sure the tools folder exist.
 if [ ! -d "$TOOLS_DIR" ]; then
@@ -84,13 +89,15 @@ export DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 # Download NuGet if it does not exist.
 if [ ! -f "$NUGET_EXE" ]; then
-    echo "Downloading NuGet..."
+    echo "Downloading NuGet ($NUGET_VERSION)..."
 
     curl -Lsfo "$NUGET_EXE" "$NUGET_URL"
     if [ $? -ne 0 ]; then
         echo "An error occured while downloading nuget.exe."
         exit 1
     fi
+
+    echo ($NUGET_EXE help | head -n 1)
 fi
 
 ###########################################################################
@@ -119,9 +126,9 @@ $MD5_EXE $PACKAGES_CONFIG | awk '{ print $1 }' >| $PACKAGES_CONFIG_MD5
 if [ ! -d "$TOOLS_DIR/Maxfire.CakeScripts" ]; then
     # latest or empty string
     if [[ $CAKESCRIPTS_VERSION == "latest" ]] || [[ -z "$CAKESCRIPTS_VERSION" ]]; then
-        mono "$NUGET_EXE" install Maxfire.CakeScripts -ExcludeVersion -Prerelease -Source https://www.myget.org/F/maxfire/api/v3/index.json
+        mono "$NUGET_EXE" install Maxfire.CakeScripts -ExcludeVersion -Prerelease -Source 'https://api.nuget.org/v3/index.json;https://www.myget.org/F/maxfire/api/v3/index.json'
     else
-        mono "$NUGET_EXE" install Maxfire.CakeScripts -Version "$CAKESCRIPTS_VERSION" -ExcludeVersion -Prerelease -Source https://www.myget.org/F/maxfire/api/v3/index.json
+        mono "$NUGET_EXE" install Maxfire.CakeScripts -Version "$CAKESCRIPTS_VERSION" -ExcludeVersion -Prerelease -Source 'https://api.nuget.org/v3/index.json;https://www.myget.org/F/maxfire/api/v3/index.json'
     fi
 fi
 
