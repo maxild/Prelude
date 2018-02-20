@@ -87,15 +87,6 @@ Task("Restore")
     });
 });
 
-// TODO: Move to Lofus
-Task("Restore2")
-    .Does(() =>
-{
-    Information("Restoring packages for {0}...", parameters.Paths.Files.Solution);
-    NuGetRestore(parameters.Paths.Files.Solution, new NuGetRestoreSettings { ConfigFile = "./nuget.config" });
-    Information("Package restore was successful!");
-});
-
 Task("Build")
     .IsDependentOn("Patch-Project-Json")
     .IsDependentOn("Generate-CommonAssemblyInfo")
@@ -109,25 +100,6 @@ Task("Build")
             Configuration = parameters.Configuration
         });
     }
-});
-
-// TODO: Move to Lofus
-Task("Build2")
-    .IsDependentOn("Generate-CommonAssemblyInfo2")
-    .IsDependentOn("Restore2")
-    .Does(() =>
-{
-    Information("Building {0}", parameters.Paths.Files.Solution);
-
-    MSBuild(parameters.Paths.Files.Solution, settings =>
-        settings.SetPlatformTarget(PlatformTarget.MSIL) // AnyCPU
-            .WithProperty("TreatWarningsAsErrors", "true")
-            .WithProperty("nowarn", @"""1591,1573""") // Missing XML comment for publicly visible type or member, Parameter 'parameter' has no matching param tag in the XML comment
-            .WithTarget("Clean")
-            .WithTarget("Build")
-            .SetConfiguration(parameters.Configuration)
-            .SetVerbosity(Verbosity.Minimal)
-    );
 });
 
 Task("Test")
@@ -179,16 +151,6 @@ Task("Test")
 
         }
     }
-});
-
-// TODO: Move to Lofus
-Task("Test2")
-    .IsDependentOn("Build2")
-    .Does(() =>
-{
-    var testAssemblies = parameters.GetBuildArtifacts("Brf.Lofus.Core.Tests", "Brf.Lofus.Integration.Tests", "Brf.Lofus.ProductSpecs");
-    Information("Running tests for {0}", string.Join(", ", testAssemblies));
-    XUnit2(testAssemblies);
 });
 
 Task("Package")
@@ -434,21 +396,6 @@ Task("Generate-CommonAssemblyInfo")
 
     // Generate ./src/CommonAssemblyInfo.cs that is ignored by GIT
     System.IO.File.WriteAllText(parameters.Paths.Files.CommonAssemblyInfo.FullPath, content, Encoding.UTF8);
-});
-
-Task("Generate-CommonAssemblyInfo2")
-	.Description("Patches the AssemblyInfo files.")
-	.IsDependentOn("Clean")
-	.Does(() =>
-{
-	// Generate ./src/CommonAssemblyInfo.cs that is ignored by GIT
-    CreateAssemblyInfo(parameters.Paths.Files.CommonAssemblyInfo.FullPath, new AssemblyInfoSettings {
-		Product = "Maxfire.Prelude",
-		Version = parameters.VersionInfo.AssemblyVersion,
-		FileVersion = parameters.VersionInfo.AssemblyFileVersion,
-		InformationalVersion = parameters.VersionInfo.AssemblyInformationalVersion,
-		Copyright = "Copyright (c) Morten Maxild."
-	});
 });
 
 Task("Clear-PackageCache")
