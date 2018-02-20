@@ -97,7 +97,8 @@ if [ ! -f "$NUGET_EXE" ]; then
         exit 1
     fi
 
-    echo ($NUGET_EXE help | head -n 1)
+    # TODO: Edit and Uncomment
+    #echo ($NUGET_EXE help | head -n 1)
 fi
 
 ###########################################################################
