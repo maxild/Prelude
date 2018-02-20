@@ -46,9 +46,9 @@ for i in "$@"; do
         -t|--target) TARGET="$2"; shift ;;
         -c|--configuration) CONFIGURATION="$2"; shift ;;
         -v|--verbosity) VERBOSITY="$2"; shift ;;
+        --nugetVersion) NUGET_VERSION="$2"; shift ;;
+        --cakeScriptsVersion) CAKESCRIPTS_VERSION="$2"; shift ;;
         -d|--dryrun) DRYRUN="--dryrun" ;;
-        --nugetVersion) NUGET_VERSION="$2" ;; shift ;;
-        --cakeScriptsVersion) CAKESCRIPTS_VERSION="$2" ;; shift ;;
         --version) SHOW_VERSION=true ;;
         --) shift; SCRIPT_ARGUMENTS+=("$@"); break ;;
         *) SCRIPT_ARGUMENTS+=("$1") ;;
