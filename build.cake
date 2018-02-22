@@ -24,6 +24,7 @@ var parameters = CakeScripts.GetParameters(
         DeployToProdFeedUrl = "https://www.nuget.org/api/v2/package"             // NuGet.org feed url
     });
 bool publishingError = false;
+DotNetCoreMSBuildSettings msBuildSettings = null;
 
 ///////////////////////////////////////////////////////////////////////////////
 // SETUP / TEARDOWN
@@ -35,6 +36,13 @@ Setup(context =>
         Information("Increasing verbosity to diagnostic.");
         context.Log.Verbosity = Verbosity.Diagnostic;
     }
+
+    msBuildSettings = new DotNetCoreMSBuildSettings()
+                        //.WithProperty("Version", parameters.VersionInfo.SemVer)
+                        .WithProperty("Version", parameters.VersionInfo.NuGetVersion)
+                        .WithProperty("AssemblyVersion", parameters.VersionInfo.AssemblyVersion)
+                        .WithProperty("FileVersion", parameters.VersionInfo.AssemblyFileVersion);
+                        //.WithProperty("PackageReleaseNotes", string.Concat("\"", releaseNotes, "\""));
 
     Information("Building version {0} of {1} ({2}, {3}) using version {4} of Cake. (IsTagPush: {5})",
         parameters.VersionInfo.SemVer,
@@ -80,77 +88,100 @@ Task("Clean")
 Task("Restore")
     .Does(() =>
 {
-    DotNetCoreRestore("./", new DotNetCoreRestoreSettings
+    DotNetCoreRestore("./Prelude.sln", new DotNetCoreRestoreSettings
     {
-        Verbose = false,
-        Verbosity = DotNetCoreRestoreVerbosity.Minimal
+        Verbosity = DotNetCoreVerbosity.Minimal,
+        MSBuildSettings = msBuildSettings
     });
 });
 
 Task("Build")
-    .IsDependentOn("Patch-Project-Json")
     .IsDependentOn("Generate-CommonAssemblyInfo")
     .IsDependentOn("Restore")
     .Does(() =>
 {
-    foreach (var project in GetFiles("./**/project.json"))
+    var path = MakeAbsolute(new DirectoryPath("./Prelude.sln"));
+    DotNetCoreBuild(path.FullPath, new DotNetCoreBuildSettings()
     {
-        DotNetCoreBuild(project.GetDirectory().FullPath, new DotNetCoreBuildSettings {
-            VersionSuffix = parameters.VersionInfo.VersionSuffix,
-            Configuration = parameters.Configuration
-        });
-    }
+        VersionSuffix = parameters.VersionInfo.VersionSuffix,
+        Configuration = parameters.Configuration,
+        NoRestore = true,
+        MSBuildSettings = msBuildSettings
+    });
 });
 
 Task("Test")
     .IsDependentOn("Build")
     .Does(() =>
 {
-    foreach (var testProject in GetFiles(string.Format("{0}/**/project.json", parameters.Paths.Directories.Test)))
+    var testProjects = GetFiles($"./{parameters.Paths.Directories.Test}/**/*.csproj");
+    foreach(var project in testProjects)
     {
-        if (IsRunningOnWindows())
+        // .NET Core
+        DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
         {
-            DotNetCoreTest(testProject.GetDirectory().FullPath, new DotNetCoreTestSettings {
-                Configuration = parameters.Configuration,
-                NoBuild = true,
-                Verbose = false
-            });
-        }
-        else
+            Framework = "netcoreapp1.0",
+            NoBuild = true,
+            NoRestore = true,
+            Configuration = parameters.Configuration
+        });
+
+        // .NET Framework/Mono
+        DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
         {
-            // Ideally we would use the 'dotnet test' command to test both netcoreapp1.0 (CoreCLR)
-            // and net452 (Mono), but this currently doesn't work due to
-            //    https://github.com/dotnet/cli/issues/3073
-
-            //
-            // .NET Core (on Linux and OS X)
-            //
-
-            DotNetCoreTest(testProject.GetDirectory().FullPath, new DotNetCoreTestSettings {
-                Configuration = parameters.Configuration,
-                Framework = "netcoreapp1.0",
-                NoBuild = true,
-                Verbose = false
-            });
-
-            //
-            // Mono (on Linux and OS X)
-            //
-
-            var testProjectPath = testProject.GetDirectory().FullPath;
-            var testProjectName = testProject.GetDirectory().GetDirectoryName();
-
-            var xunitRunner = GetFiles(testProjectPath + "/bin/" + parameters.Configuration + "/net452/*/dotnet-test-xunit.exe").First().FullPath;
-            var testAssembly = GetFiles(testProjectPath + "/bin/" + parameters.Configuration + "/net452/*/" + testProjectName + ".dll").First().FullPath;
-
-            int exitCode = Run("mono", xunitRunner + " " + testAssembly);
-            if (exitCode != 0)
-            {
-                throw new Exception("Tests in '" + testProjectName + "' failed on Mono!");
-            }
-
-        }
+            Framework = "net452",
+            NoBuild = true,
+            NoRestore = true,
+            Configuration = parameters.Configuration
+        });
     }
+
+    // foreach (var testProject in GetFiles(string.Format("{0}/**/project.json", parameters.Paths.Directories.Test)))
+    // {
+    //     if (IsRunningOnWindows())
+    //     {
+    //         DotNetCoreTest(testProject.GetDirectory().FullPath, new DotNetCoreTestSettings {
+    //             Configuration = parameters.Configuration,
+    //             NoBuild = true,
+    //             NoRestore = true,
+    //             Verbose = false
+    //         });
+    //     }
+    //     else
+    //     {
+    //         // Ideally we would use the 'dotnet test' command to test both netcoreapp1.0 (CoreCLR)
+    //         // and net452 (Mono), but this currently doesn't work due to
+    //         //    https://github.com/dotnet/cli/issues/3073
+
+    //         //
+    //         // .NET Core (on Linux and OS X)
+    //         //
+
+    //         DotNetCoreTest(testProject.GetDirectory().FullPath, new DotNetCoreTestSettings {
+    //             Configuration = parameters.Configuration,
+    //             Framework = "netcoreapp1.0",
+    //             NoBuild = true,
+    //             Verbose = false
+    //         });
+
+    //         //
+    //         // Mono (on Linux and OS X)
+    //         //
+
+    //         var testProjectPath = testProject.GetDirectory().FullPath;
+    //         var testProjectName = testProject.GetDirectory().GetDirectoryName();
+
+    //         var xunitRunner = GetFiles(testProjectPath + "/bin/" + parameters.Configuration + "/net452/*/dotnet-test-xunit.exe").First().FullPath;
+    //         var testAssembly = GetFiles(testProjectPath + "/bin/" + parameters.Configuration + "/net452/*/" + testProjectName + ".dll").First().FullPath;
+
+    //         int exitCode = Run("mono", xunitRunner + " " + testAssembly);
+    //         if (exitCode != 0)
+    //         {
+    //             throw new Exception("Tests in '" + testProjectName + "' failed on Mono!");
+    //         }
+
+    //     }
+    // }
 });
 
 Task("Package")
@@ -158,14 +189,18 @@ Task("Package")
     .IsDependentOn("Test")
     .Does(() =>
 {
-    foreach (var project in GetFiles(string.Format("{0}/**/project.json", parameters.Paths.Directories.Src)))
+    // Build libraries
+    var projects = GetFiles($"{parameters.Paths.Directories.Src}/**/*.csproj");
+    foreach(var project in projects)
     {
-        DotNetCorePack(project.GetDirectory().FullPath, new DotNetCorePackSettings {
-            VersionSuffix = parameters.VersionInfo.VersionSuffix,
+        DotNetCorePack(project.FullPath, new DotNetCorePackSettings {
+            //VersionSuffix = parameters.VersionInfo.VersionSuffix,
             Configuration = parameters.Configuration,
             OutputDirectory = parameters.Paths.Directories.Artifacts,
             NoBuild = true,
-            Verbose = false
+            NoRestore = true,
+            IncludeSymbols = true, // ????
+            MSBuildSettings = msBuildSettings
         });
     }
 });

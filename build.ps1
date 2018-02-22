@@ -5,7 +5,6 @@
 ##########################################################################
 
 <#
-
 .SYNOPSIS
 This is a Powershell script to bootstrap a Cake build.
 
@@ -13,8 +12,6 @@ This is a Powershell script to bootstrap a Cake build.
 This Powershell script will download NuGet if missing, restore NuGet tools (including Cake)
 and execute your Cake build script with the parameters you provide.
 
-.PARAMETER Script
-The build script to execute.
 .PARAMETER Target
 The build script target to run.
 .PARAMETER Configuration
@@ -27,13 +24,9 @@ The version of nuget.exe to be downloaded.
 The version of Maxfire.CakeScripts to be downloaded.
 .PARAMETER ShowVersion
 Show version of Cake tool.
-.PARAMETER Experimental
-Tells Cake to use the latest Roslyn release.
 .PARAMETER WhatIf
 Performs a dry run of the build script.
 No tasks will be executed.
-.PARAMETER Mono
-Tells Cake to use the Mono scripting engine.
 .PARAMETER SkipToolPackageRestore
 Skips restoring of packages.
 .PARAMETER ScriptArgs
@@ -46,7 +39,6 @@ http://cakebuild.net
 
 [CmdletBinding()]
 Param(
-    [string]$Script = "build.cake",
     [string]$Target = "Default",
     [ValidateSet("Release", "Debug")]
     [string]$Configuration = "Release",
@@ -55,10 +47,8 @@ Param(
     [string]$NuGetVersion = "latest",
     [string]$CakeScriptsVersion = "latest",
     [switch]$ShowVersion,
-    [switch]$Experimental,
     [Alias("DryRun","Noop")]
     [switch]$WhatIf,
-    [switch]$Mono,
     [switch]$SkipToolPackageRestore,
     [Parameter(Position=0,Mandatory=$false,ValueFromRemainingArguments=$true)]
     [string[]]$ScriptArgs
@@ -76,36 +66,14 @@ $PACKAGES_CONFIG_MD5 = Join-Path $TOOLS_DIR "packages.config.md5sum"
 # Maxfire.CakeScripts version can be pinned
 $CakeScriptsVersion = "latest" # 'latest' or 'major.minor.patch'
 
-$DotNetChannel = "preview";
-$DotNetVersion = "1.0.0-preview2-003121";
-$DotNetInstallerUri = "https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0-preview2/scripts/obtain/dotnet-install.ps1";
+$DotNetChannel = "Current";
+$DotNetVersion = "2.1.4";
+$DotNetInstallerUri = "https://dot.net/v1/dotnet-install.ps1";
 
 if ((-not ($NuGetVersion -eq "latest")) -and (-not $NuGetVersion.StartsWith("v"))) {
     $NuGetVersion = ("v" + $NuGetVersion)
 }
-
 $NugetUrl = "https://dist.nuget.org/win-x86-commandline/$NuGetVersion/nuget.exe"
-
-# Should we use mono?
-$UseMono = "";
-if($Mono.IsPresent) {
-    Write-Verbose -Message "Using the Mono based scripting engine."
-    $UseMono = "-mono"
-}
-
-# Should we use the new Roslyn?
-$UseExperimental = "";
-if($Experimental.IsPresent -and (-not ($Mono.IsPresent))) {
-    Write-Verbose -Message "Using experimental version of Roslyn."
-    $UseExperimental = "-experimental"
-}
-
-# Is this a dry run?
-$UseDryRun = "";
-if($WhatIf.IsPresent) {
-    Write-Verbose -Message "Performs a dry run of the build script."
-    $UseDryRun = "-dryrun"
-}
 
 # Make sure tools folder exists
 if ((Test-Path $PSScriptRoot) -and (-not (Test-Path $TOOLS_DIR))) {
@@ -134,7 +102,7 @@ Function Remove-PathVariable([string]$VariableToRemove)
     }
 }
 
-# Get .NET Core CLI version if installed.
+# Get .NET Core CLI path if installed.
 $FoundDotNetCliVersion = $null;
 if (Get-Command dotnet -ErrorAction SilentlyContinue) {
     $FoundDotNetCliVersion = dotnet --version;
@@ -158,6 +126,9 @@ if ($FoundDotNetCliVersion -ne $DotNetVersion) {
 
     & "$InstallPath\dotnet.exe" --info
 }
+
+$env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+$env:DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 ###########################################################################
 # Install Nuget
@@ -266,11 +237,15 @@ if ($ShowVersion.IsPresent) {
     & $CAKE_EXE -version
 }
 else {
+    # Build the argument list.
+    $Arguments = @{
+        target=$Target;
+        configuration=$Configuration;
+        verbosity=$Verbosity;
+        dryrun=$WhatIf;
+    }.GetEnumerator() | ForEach-Object {"--{0}=`"{1}`"" -f $_.key, $_.value };
+
     Write-Host "Running build script..."
-    # C# v6 features (e.g. string interpolation) are not supported without '-experimental' flag
-    #   See https://github.com/cake-build/cake/issues/293
-    #   See https://github.com/cake-build/cake/issues/326
-    #& $CAKE_EXE $Script -experimental -target="$Target" -configuration="$Configuration" -verbosity="$Verbosity" $UseMono $UseDryRun $UseExperimental $ScriptArgs
-    & $CAKE_EXE $Script -target="$Target" -configuration="$Configuration" -verbosity="$Verbosity" $UseMono $UseDryRun $UseExperimental $ScriptArgs
+    Invoke-Expression "& `"$CAKE_EXE`" `"build.cake`" $Arguments $ScriptArgs"
 }
 exit $LASTEXITCODE
