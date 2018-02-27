@@ -8,9 +8,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
     <VersionPrefix>0.2.0</VersionPrefix>
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <DebugType>portable</DebugType>
+
     <PackageId>Maxfire.Prelude.ComponentModel.TypeConverter</PackageId>
     <PackageTags>prelude</PackageTags>
     <PackageReleaseNotes>.NET Core 1.0 and .NET Framework 4.5.2 support</PackageReleaseNotes>
@@ -18,19 +16,10 @@
     <PackageLicenseUrl>http://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/maxild/Prelude/</RepositoryUrl>
-    <NetStandardImplicitPackageVersion>1.6.0</NetStandardImplicitPackageVersion>
-    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
-    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
-    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
-    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
-    <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
-    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+
   </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Include="..\CommonAssemblyInfo.cs" />
-  </ItemGroup>
+  <Import Project="..\..\Shared.msbuild" />
 
   <ItemGroup>
     <ProjectReference Include="..\Maxfire.Prelude.Core\Maxfire.Prelude.Core.csproj" />

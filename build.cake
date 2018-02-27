@@ -146,11 +146,13 @@ Task("Test")
             Configuration = parameters.Configuration
         });
 
-        // Somehow tests fail on Mono???
-        if (false == IsRunningOnWindows() &&
-            false == project.ToString().EndsWith("Maxfire.Prelude.ComponentModel.TypeConverter.Tests.csproj")) {
-
+        // Microsoft does not officially support Mono via .NET Core SDK. Their support for .NET Core
+        // on Linux and OS X starts and ends with .NET Core. Anyway we test on Mono for now, and maybe
+        // remove Mono support soon.
+        if (true /* false == IsRunningOnWindows() */) {
             // .NET Framework / Mono
+            // For Mono to support dotnet-xunit we have to put { "appDomain": "denied" } in config
+            // See https://github.com/xunit/xunit/issues/1357#issuecomment-314416426
             DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
             {
                 Framework = "net461",
@@ -160,53 +162,6 @@ Task("Test")
             });
         }
     }
-
-    // foreach (var testProject in GetFiles(string.Format("{0}/**/project.json", parameters.Paths.Directories.Test)))
-    // {
-    //     if (IsRunningOnWindows())
-    //     {
-    //         DotNetCoreTest(testProject.GetDirectory().FullPath, new DotNetCoreTestSettings {
-    //             Configuration = parameters.Configuration,
-    //             NoBuild = true,
-    //             NoRestore = true,
-    //             Verbose = false
-    //         });
-    //     }
-    //     else
-    //     {
-    //         // Ideally we would use the 'dotnet test' command to test both netcoreapp1.0 (CoreCLR)
-    //         // and net452 (Mono), but this currently doesn't work due to
-    //         //    https://github.com/dotnet/cli/issues/3073
-
-    //         //
-    //         // .NET Core (on Linux and OS X)
-    //         //
-
-    //         DotNetCoreTest(testProject.GetDirectory().FullPath, new DotNetCoreTestSettings {
-    //             Configuration = parameters.Configuration,
-    //             Framework = "netcoreapp1.0",
-    //             NoBuild = true,
-    //             Verbose = false
-    //         });
-
-    //         //
-    //         // Mono (on Linux and OS X)
-    //         //
-
-    //         var testProjectPath = testProject.GetDirectory().FullPath;
-    //         var testProjectName = testProject.GetDirectory().GetDirectoryName();
-
-    //         var xunitRunner = GetFiles(testProjectPath + "/bin/" + parameters.Configuration + "/net452/*/dotnet-test-xunit.exe").First().FullPath;
-    //         var testAssembly = GetFiles(testProjectPath + "/bin/" + parameters.Configuration + "/net452/*/" + testProjectName + ".dll").First().FullPath;
-
-    //         int exitCode = Run("mono", xunitRunner + " " + testAssembly);
-    //         if (exitCode != 0)
-    //         {
-    //             throw new Exception("Tests in '" + testProjectName + "' failed on Mono!");
-    //         }
-
-    //     }
-    // }
 });
 
 Task("Package")
@@ -389,37 +344,6 @@ Task("Print-AppVeyor-Environment-Variables")
     .Does(() =>
 {
     parameters.PrintAppVeyorEnvironmentVariables();
-});
-
-
-Task("Patch-Project-Json")
-    .Does(() =>
-{
-    // Only production code is patched
-    var projects = GetFiles("./src/**/project.json");
-
-    foreach (var project in projects)
-    {
-        Information("Patching project.json in '{0}' to have version equal to {1}",
-            project.GetDirectory().GetDirectoryName(),
-            parameters.VersionInfo.NuGetVersion);
-
-        // Reads the current version without the '-*' suffix
-        string currVersion = ProjectJsonUtil.ReadProjectJsonVersion(project.FullPath);
-
-        Information("The version in the project.json is {0}", currVersion);
-
-        // Only patch project.json files if the major.minor.patch versions do not match
-        if (parameters.VersionInfo.MajorMinorPatch != currVersion) {
-
-            Information("Patching version to {0}", parameters.VersionInfo.PatchedVersion);
-
-            if (!ProjectJsonUtil.PatchProjectJsonVersion(project, parameters.VersionInfo.PatchedVersion))
-            {
-                Warning("No version specified in {0}.", project.FullPath);
-            }
-        }
-    }
 });
 
 Task("Generate-CommonAssemblyInfo")

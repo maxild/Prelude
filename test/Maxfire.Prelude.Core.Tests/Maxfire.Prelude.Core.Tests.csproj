@@ -3,9 +3,10 @@
   <PropertyGroup>
     <TargetFrameworks>net461;netcoreapp1.1;netcoreapp2.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <DebugType>portable</DebugType>
+    <IsTestProject>true</IsTestProject>
   </PropertyGroup>
+
+  <Import Project="..\..\Shared.msbuild" />
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Maxfire.Prelude.Core\Maxfire.Prelude.Core.csproj" />
