@@ -17,8 +17,9 @@ addons:
     - libicu-dev
     - libssl-dev
     - libunwind8
-    # build.sh uses dotnet-install
-    #- dotnet-dev-1.1.4
+    #- dotnet-sdk-2.1.4
+    #- dotnet-runtime-1.1.6
+    #- dotnet-dev-1.1.4 # .Net Core 1.1 installed via: apt-get install dotnet-dev-1.1.4)
     #- dotnet-sharedframework-microsoft.netcore.app-1.0.5
     #- dotnet-sharedframework-microsoft.netcore.app-1.1.2
 
@@ -26,7 +27,7 @@ addons:
 osx_image: xcode8.3
 
 mono:
-  - 4.4.2
+  - latest
 
 # build.sh uses dotnet-install
 dotnet: 2.0.0
