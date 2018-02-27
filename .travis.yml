@@ -4,31 +4,28 @@ os:
   - osx
 
 # .NET CLI require Ubuntu 14.04
-# See also https://github.com/dotnet/core/blob/master/Documentation/prereqs.md
 sudo: required
 dist: trusty
 addons:
   apt:
+    sources:
+    - sourceline: 'deb [arch=amd64] https://packages.microsoft.com/repos/microsoft-ubuntu-trusty-prod trusty main'
+      key_url: 'https://packages.microsoft.com/keys/microsoft.asc'
     packages:
     - gettext
     - libcurl4-openssl-dev
     - libicu-dev
     - libssl-dev
     - libunwind8
-    - zlib1g
-
-mono:
-  - latest
+    - dotnet-dev-1.1.4
 
 # .NET CLI require OSX 10.10
-osx_image: xcode7.3
+osx_image: xcode8.3
 
-install:
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update; fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install openssl; fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then ln -s /usr/local/opt/openssl/lib/libcrypto.1.0.0.dylib /usr/local/lib/; fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then ln -s /usr/local/opt/openssl/lib/libssl.1.0.0.dylib /usr/local/lib/; fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew list; fi
+mono:
+  - 4.4.2
+
+dotnet: 1.0.4
 
 script:
   - ./build.sh --target Travis --configuration Debug --verbosity diagnostic

@@ -117,10 +117,19 @@ Task("Test")
     var testProjects = GetFiles($"./{parameters.Paths.Directories.Test}/**/*.csproj");
     foreach(var project in testProjects)
     {
-        // .NET Core
+        // .NET Core 1.1
         DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
         {
-            Framework = "netcoreapp1.0",
+            Framework = "netcoreapp1.1",
+            NoBuild = true,
+            NoRestore = true,
+            Configuration = parameters.Configuration
+        });
+
+        // .NET Core 2.x
+        DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
+        {
+            Framework = "netcoreapp2.0",
             NoBuild = true,
             NoRestore = true,
             Configuration = parameters.Configuration
@@ -350,10 +359,7 @@ Task("Publish-GitHub-Release")
 Task("Clear-Artifacts")
     .Does(() =>
 {
-    if (DirectoryExists(parameters.Paths.Directories.Artifacts))
-    {
-        DeleteDirectory(parameters.Paths.Directories.Artifacts, true);
-    }
+    parameters.ClearArtifacts();
 });
 
 Task("Show-Info")
