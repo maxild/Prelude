@@ -17,7 +17,7 @@ addons:
     - libicu-dev
     - libssl-dev
     - libunwind8
-    - dotnet-dev-1.1.4
+    #- dotnet-dev-1.1.4
     #- dotnet-sdk-2.1.4
     #- dotnet-runtime-1.1.6
     #- dotnet-dev-1.1.4 # .Net Core 1.1 installed via: apt-get install dotnet-dev-1.1.4)
@@ -28,9 +28,10 @@ addons:
 osx_image: xcode8.3
 
 mono:
-  - 4.4.2
+  #- 4.4.2
+  - latest
 
-dotnet: 1.0.4
+#dotnet: 1.0.4
 
 script:
   - ./build.sh --target Travis --configuration Debug --verbosity diagnostic

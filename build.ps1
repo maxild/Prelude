@@ -66,9 +66,10 @@ $PACKAGES_CONFIG_MD5 = Join-Path $TOOLS_DIR "packages.config.md5sum"
 # Maxfire.CakeScripts version can be pinned
 $CakeScriptsVersion = "latest" # 'latest' or 'major.minor.patch'
 
-$DotNetChannel = "Current";
-$DotNetVersion = "2.1.4";
-$DotNetInstallerUri = "https://dot.net/v1/dotnet-install.ps1";
+# .NET Core SDK version
+$DotNetSdkVersion = "2.1.4"
+# .NET Core Runtime version (older release/runtime to install)
+$DotNetRuntimeVersion="1.1.6" # TODO: How to specify latest 1.1.x release?
 
 if ((-not ($NuGetVersion -eq "latest")) -and (-not $NuGetVersion.StartsWith("v"))) {
     $NuGetVersion = ("v" + $NuGetVersion)
@@ -109,15 +110,20 @@ if (Get-Command dotnet -ErrorAction SilentlyContinue) {
 }
 
 # If version mismatch install dotnetcli locally
-if ($FoundDotNetCliVersion -ne $DotNetVersion) {
+if ($FoundDotNetCliVersion -ne $DotNetSdkVersion) {
     Write-Verbose -Message "Installing .NET Core SDK Binaries..."
     $InstallPath = Join-Path $PSScriptRoot ".dotnet"
     if (!(Test-Path $InstallPath)) {
         mkdir -Force $InstallPath | Out-Null;
     }
     # The remote server returned an error: (407) Proxy Authentication Required, if behind proxy
-    (New-Object System.Net.WebClient).DownloadFile($DotNetInstallerUri, "$InstallPath\dotnet-install.ps1");
-    & $InstallPath\dotnet-install.ps1 -Channel $DotNetChannel -Version $DotNetVersion -InstallDir $InstallPath -NoPath;
+    (New-Object System.Net.WebClient).DownloadFile("https://dot.net/v1/dotnet-install.ps1", "$InstallPath\dotnet-install.ps1");
+    # Install .NET SDK (with the latest 2.x runtime)
+    & $InstallPath\dotnet-install.ps1 -Version $DotNetSdkVersion -InstallDir $InstallPath -NoPath;
+    # Install (another..older) .NET Runtime (1.1.x)
+    if ($DotNetRuntimeVersion) {
+        & $InstallPath\dotnet-install.ps1 -SharedRuntime -Version $DotNetRuntimeVersion -InstallDir $InstallPath -NoPath;
+    }
 
     Remove-PathVariable "$InstallPath"
     $env:PATH = "$InstallPath;$env:PATH"

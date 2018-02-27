@@ -16,9 +16,10 @@ CAKE_EXE="$TOOLS_DIR/Cake/Cake.exe"
 PACKAGES_CONFIG="$TOOLS_DIR/packages.config"
 PACKAGES_CONFIG_MD5="$TOOLS_DIR/packages.config.md5sum"
 
-DOTNET_CHANNEL="Current"
-DOTNET_VERSION="2.1.4"
-DOTNET_CHANNEL_INSTALLER_URL="https://dot.net/v1/dotnet-install.sh"
+# .NET Core SDK version (with 2.x release/runtime)
+DOTNET_SDK_VERSION="2.1.4" # TODO: How to specify latest 2.x release (Current)?
+# .NET Core Runtime version (older release/runtime to install)
+DOTNET_RUNTIME_VERSION="1.1.6" # TODO: How to specify latest 1.1.x release (LTS)?
 
 # Define md5sum or md5 depending on Linux/OSX
 MD5_EXE=
@@ -75,9 +76,12 @@ echo "Installing .NET Core SDK Binaries..."
 if [ ! -d "$SCRIPT_DIR/.dotnet" ]; then
   mkdir "$SCRIPT_DIR/.dotnet"
 fi
-curl -Lsfo "$DOTNET_DIR/dotnet-install.sh" "$DOTNET_CHANNEL_INSTALLER_URL"
+curl -Lsfo "$DOTNET_DIR/dotnet-install.sh" https://dot.net/v1/dotnet-install.sh
 sudo chmod +x "$DOTNET_DIR/dotnet-install.sh"
-sudo bash "$DOTNET_DIR/dotnet-install.sh" --channel "$DOTNET_CHANNEL" --version "$DOTNET_VERSION" --install-dir "$DOTNET_DIR" --no-path
+sudo bash "$DOTNET_DIR/dotnet-install.sh" --version "$DOTNET_SDK_VERSION" --install-dir "$DOTNET_DIR" --no-path
+if [[ ! -z  $DOTNET_RUNTIME_VERSION ]]; then
+  sudo bash "$DOTNET_DIR/dotnet-install.sh" --shared-runtime --version "$DOTNET_RUNTIME_VERSION" --install-dir "$DOTNET_DIR" --no-path
+fi
 export PATH="$DOTNET_DIR":$PATH
 export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
