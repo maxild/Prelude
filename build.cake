@@ -44,6 +44,16 @@ Setup(context =>
                         .WithProperty("FileVersion", parameters.VersionInfo.AssemblyFileVersion);
                         //.WithProperty("PackageReleaseNotes", string.Concat("\"", releaseNotes, "\""));
 
+    // See https://github.com/dotnet/sdk/issues/335#issuecomment-346951034
+    if (false == parameters.IsRunningOnWindows)
+    {
+        var frameworkPathOverride = new FilePath(typeof(object).Assembly.Location).GetDirectory().FullPath + "/";
+
+        // Use FrameworkPathOverride when not running on Windows.
+        Information("Build will use FrameworkPathOverride={0} since not building on Windows.", frameworkPathOverride);
+        msBuildSettings.WithProperty("FrameworkPathOverride", frameworkPathOverride);
+    }
+
     Information("Building version {0} of {1} ({2}, {3}) using version {4} of Cake. (IsTagPush: {5})",
         parameters.VersionInfo.SemVer,
         parameters.ProjectName,
@@ -91,6 +101,12 @@ Task("Restore")
     DotNetCoreRestore("./Prelude.sln", new DotNetCoreRestoreSettings
     {
         Verbosity = DotNetCoreVerbosity.Minimal,
+        // Sources = new [] {
+        //     "https://www.myget.org/F/xunit/api/v3/index.json",
+        //     "https://dotnet.myget.org/F/dotnet-core/api/v3/index.json",
+        //     "https://dotnet.myget.org/F/cli-deps/api/v3/index.json",
+        //     "https://api.nuget.org/v3/index.json",
+        // },
         MSBuildSettings = msBuildSettings
     });
 });
@@ -103,7 +119,7 @@ Task("Build")
     var path = MakeAbsolute(new DirectoryPath("./Prelude.sln"));
     DotNetCoreBuild(path.FullPath, new DotNetCoreBuildSettings()
     {
-        VersionSuffix = parameters.VersionInfo.VersionSuffix,
+        //VersionSuffix = parameters.VersionInfo.VersionSuffix,
         Configuration = parameters.Configuration,
         NoRestore = true,
         MSBuildSettings = msBuildSettings
@@ -135,16 +151,14 @@ Task("Test")
             Configuration = parameters.Configuration
         });
 
-        if (false == IsRunningOnWindows()) {
-            // .NET Framework (Mono does not work?!?)
-            DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
-            {
-                Framework = "net46",
-                NoBuild = true,
-                NoRestore = true,
-                Configuration = parameters.Configuration
-            });
-        }
+        // .NET Framework (Mono does not work?!?)
+        DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
+        {
+            Framework = "net461",
+            NoBuild = true,
+            NoRestore = true,
+            Configuration = parameters.Configuration
+        });
     }
 
     // foreach (var testProject in GetFiles(string.Format("{0}/**/project.json", parameters.Paths.Directories.Test)))
