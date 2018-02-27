@@ -148,7 +148,7 @@ Task("Test")
 
         // Somehow tests fail on Mono???
         if (false == IsRunningOnWindows() &&
-            project.ToString().EndsWith("Maxfire.Prelude.ComponentModel.TypeConverter.Tests.csproj")) {
+            false == project.ToString().EndsWith("Maxfire.Prelude.ComponentModel.TypeConverter.Tests.csproj")) {
 
             // .NET Framework / Mono
             DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
