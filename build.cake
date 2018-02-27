@@ -24,6 +24,7 @@ var parameters = CakeScripts.GetParameters(
         DeployToProdFeedUrl = "https://www.nuget.org/api/v2/package"             // NuGet.org feed url
     });
 bool publishingError = false;
+DotNetCoreMSBuildSettings msBuildSettings = null;
 
 ///////////////////////////////////////////////////////////////////////////////
 // SETUP / TEARDOWN
@@ -34,6 +35,24 @@ Setup(context =>
     if (parameters.Git.IsMasterBranch && context.Log.Verbosity != Verbosity.Diagnostic) {
         Information("Increasing verbosity to diagnostic.");
         context.Log.Verbosity = Verbosity.Diagnostic;
+    }
+
+    msBuildSettings = new DotNetCoreMSBuildSettings()
+                        //.WithProperty("Version", parameters.VersionInfo.SemVer)
+                        .WithProperty("Version", parameters.VersionInfo.NuGetVersion)
+                        .WithProperty("AssemblyVersion", parameters.VersionInfo.AssemblyVersion)
+                        .WithProperty("FileVersion", parameters.VersionInfo.AssemblyFileVersion);
+                        //.WithProperty("PackageReleaseNotes", string.Concat("\"", releaseNotes, "\""));
+
+    // See https://github.com/dotnet/sdk/issues/335#issuecomment-346951034
+    if (false == parameters.IsRunningOnWindows)
+    {
+        // Since Cake runs on Mono, it is straight forward to resolve the path to the Mono libs (reference assemblies).
+        var frameworkPathOverride = new FilePath(typeof(object).Assembly.Location).GetDirectory().FullPath + "/";
+
+        // Use FrameworkPathOverride when not running on Windows.
+        Information("Build will use FrameworkPathOverride={0} since not building on Windows.", frameworkPathOverride);
+        msBuildSettings.WithProperty("FrameworkPathOverride", frameworkPathOverride);
     }
 
     Information("Building version {0} of {1} ({2}, {3}) using version {4} of Cake. (IsTagPush: {5})",
@@ -80,115 +99,69 @@ Task("Clean")
 Task("Restore")
     .Does(() =>
 {
-    DotNetCoreRestore("./", new DotNetCoreRestoreSettings
+    DotNetCoreRestore("./Prelude.sln", new DotNetCoreRestoreSettings
     {
-        Verbose = false,
-        Verbosity = DotNetCoreRestoreVerbosity.Minimal
+        Verbosity = DotNetCoreVerbosity.Minimal,
+        MSBuildSettings = msBuildSettings
     });
 });
 
-// TODO: Move to Lofus
-Task("Restore2")
-    .Does(() =>
-{
-    Information("Restoring packages for {0}...", parameters.Paths.Files.Solution);
-    NuGetRestore(parameters.Paths.Files.Solution, new NuGetRestoreSettings { ConfigFile = "./nuget.config" });
-    Information("Package restore was successful!");
-});
-
 Task("Build")
-    .IsDependentOn("Patch-Project-Json")
     .IsDependentOn("Generate-CommonAssemblyInfo")
     .IsDependentOn("Restore")
     .Does(() =>
 {
-    foreach (var project in GetFiles("./**/project.json"))
+    var path = MakeAbsolute(new DirectoryPath("./Prelude.sln"));
+    DotNetCoreBuild(path.FullPath, new DotNetCoreBuildSettings()
     {
-        DotNetCoreBuild(project.GetDirectory().FullPath, new DotNetCoreBuildSettings {
-            VersionSuffix = parameters.VersionInfo.VersionSuffix,
-            Configuration = parameters.Configuration
-        });
-    }
-});
-
-// TODO: Move to Lofus
-Task("Build2")
-    .IsDependentOn("Generate-CommonAssemblyInfo2")
-    .IsDependentOn("Restore2")
-    .Does(() =>
-{
-    Information("Building {0}", parameters.Paths.Files.Solution);
-
-    MSBuild(parameters.Paths.Files.Solution, settings =>
-        settings.SetPlatformTarget(PlatformTarget.MSIL) // AnyCPU
-            .WithProperty("TreatWarningsAsErrors", "true")
-            .WithProperty("nowarn", @"""1591,1573""") // Missing XML comment for publicly visible type or member, Parameter 'parameter' has no matching param tag in the XML comment
-            .WithTarget("Clean")
-            .WithTarget("Build")
-            .SetConfiguration(parameters.Configuration)
-            .SetVerbosity(Verbosity.Minimal)
-    );
+        //VersionSuffix = parameters.VersionInfo.VersionSuffix,
+        Configuration = parameters.Configuration,
+        NoRestore = true,
+        MSBuildSettings = msBuildSettings
+    });
 });
 
 Task("Test")
     .IsDependentOn("Build")
     .Does(() =>
 {
-    foreach (var testProject in GetFiles(string.Format("{0}/**/project.json", parameters.Paths.Directories.Test)))
+    var testProjects = GetFiles($"./{parameters.Paths.Directories.Test}/**/*.csproj");
+    foreach(var project in testProjects)
     {
-        if (IsRunningOnWindows())
+        // .NET Core 1.1
+        DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
         {
-            DotNetCoreTest(testProject.GetDirectory().FullPath, new DotNetCoreTestSettings {
-                Configuration = parameters.Configuration,
-                NoBuild = true,
-                Verbose = false
-            });
-        }
-        else
+            Framework = "netcoreapp1.1",
+            NoBuild = true,
+            NoRestore = true,
+            Configuration = parameters.Configuration
+        });
+
+        // .NET Core 2.x
+        DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
         {
-            // Ideally we would use the 'dotnet test' command to test both netcoreapp1.0 (CoreCLR)
-            // and net452 (Mono), but this currently doesn't work due to
-            //    https://github.com/dotnet/cli/issues/3073
+            Framework = "netcoreapp2.0",
+            NoBuild = true,
+            NoRestore = true,
+            Configuration = parameters.Configuration
+        });
 
-            //
-            // .NET Core (on Linux and OS X)
-            //
-
-            DotNetCoreTest(testProject.GetDirectory().FullPath, new DotNetCoreTestSettings {
-                Configuration = parameters.Configuration,
-                Framework = "netcoreapp1.0",
-                NoBuild = true,
-                Verbose = false
-            });
-
-            //
-            // Mono (on Linux and OS X)
-            //
-
-            var testProjectPath = testProject.GetDirectory().FullPath;
-            var testProjectName = testProject.GetDirectory().GetDirectoryName();
-
-            var xunitRunner = GetFiles(testProjectPath + "/bin/" + parameters.Configuration + "/net452/*/dotnet-test-xunit.exe").First().FullPath;
-            var testAssembly = GetFiles(testProjectPath + "/bin/" + parameters.Configuration + "/net452/*/" + testProjectName + ".dll").First().FullPath;
-
-            int exitCode = Run("mono", xunitRunner + " " + testAssembly);
-            if (exitCode != 0)
+        // Microsoft does not officially support Mono via .NET Core SDK. Their support for .NET Core
+        // on Linux and OS X starts and ends with .NET Core. Anyway we test on Mono for now, and maybe
+        // remove Mono support soon.
+        if (true /* false == IsRunningOnWindows() */) {
+            // .NET Framework / Mono
+            // For Mono to support dotnet-xunit we have to put { "appDomain": "denied" } in config
+            // See https://github.com/xunit/xunit/issues/1357#issuecomment-314416426
+            DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
             {
-                throw new Exception("Tests in '" + testProjectName + "' failed on Mono!");
-            }
-
+                Framework = "net461",
+                NoBuild = true,
+                NoRestore = true,
+                Configuration = parameters.Configuration
+            });
         }
     }
-});
-
-// TODO: Move to Lofus
-Task("Test2")
-    .IsDependentOn("Build2")
-    .Does(() =>
-{
-    var testAssemblies = parameters.GetBuildArtifacts("Brf.Lofus.Core.Tests", "Brf.Lofus.Integration.Tests", "Brf.Lofus.ProductSpecs");
-    Information("Running tests for {0}", string.Join(", ", testAssemblies));
-    XUnit2(testAssemblies);
 });
 
 Task("Package")
@@ -196,14 +169,18 @@ Task("Package")
     .IsDependentOn("Test")
     .Does(() =>
 {
-    foreach (var project in GetFiles(string.Format("{0}/**/project.json", parameters.Paths.Directories.Src)))
+    // Build libraries
+    var projects = GetFiles($"{parameters.Paths.Directories.Src}/**/*.csproj");
+    foreach(var project in projects)
     {
-        DotNetCorePack(project.GetDirectory().FullPath, new DotNetCorePackSettings {
-            VersionSuffix = parameters.VersionInfo.VersionSuffix,
+        DotNetCorePack(project.FullPath, new DotNetCorePackSettings {
+            //VersionSuffix = parameters.VersionInfo.VersionSuffix,
             Configuration = parameters.Configuration,
             OutputDirectory = parameters.Paths.Directories.Artifacts,
             NoBuild = true,
-            Verbose = false
+            NoRestore = true,
+            IncludeSymbols = true, // ????
+            MSBuildSettings = msBuildSettings
         });
     }
 });
@@ -353,10 +330,7 @@ Task("Publish-GitHub-Release")
 Task("Clear-Artifacts")
     .Does(() =>
 {
-    if (DirectoryExists(parameters.Paths.Directories.Artifacts))
-    {
-        DeleteDirectory(parameters.Paths.Directories.Artifacts, true);
-    }
+    parameters.ClearArtifacts();
 });
 
 Task("Show-Info")
@@ -370,37 +344,6 @@ Task("Print-AppVeyor-Environment-Variables")
     .Does(() =>
 {
     parameters.PrintAppVeyorEnvironmentVariables();
-});
-
-
-Task("Patch-Project-Json")
-    .Does(() =>
-{
-    // Only production code is patched
-    var projects = GetFiles("./src/**/project.json");
-
-    foreach (var project in projects)
-    {
-        Information("Patching project.json in '{0}' to have version equal to {1}",
-            project.GetDirectory().GetDirectoryName(),
-            parameters.VersionInfo.NuGetVersion);
-
-        // Reads the current version without the '-*' suffix
-        string currVersion = ProjectJsonUtil.ReadProjectJsonVersion(project.FullPath);
-
-        Information("The version in the project.json is {0}", currVersion);
-
-        // Only patch project.json files if the major.minor.patch versions do not match
-        if (parameters.VersionInfo.MajorMinorPatch != currVersion) {
-
-            Information("Patching version to {0}", parameters.VersionInfo.PatchedVersion);
-
-            if (!ProjectJsonUtil.PatchProjectJsonVersion(project, parameters.VersionInfo.PatchedVersion))
-            {
-                Warning("No version specified in {0}.", project.FullPath);
-            }
-        }
-    }
 });
 
 Task("Generate-CommonAssemblyInfo")
@@ -434,21 +377,6 @@ Task("Generate-CommonAssemblyInfo")
 
     // Generate ./src/CommonAssemblyInfo.cs that is ignored by GIT
     System.IO.File.WriteAllText(parameters.Paths.Files.CommonAssemblyInfo.FullPath, content, Encoding.UTF8);
-});
-
-Task("Generate-CommonAssemblyInfo2")
-	.Description("Patches the AssemblyInfo files.")
-	.IsDependentOn("Clean")
-	.Does(() =>
-{
-	// Generate ./src/CommonAssemblyInfo.cs that is ignored by GIT
-    CreateAssemblyInfo(parameters.Paths.Files.CommonAssemblyInfo.FullPath, new AssemblyInfoSettings {
-		Product = "Maxfire.Prelude",
-		Version = parameters.VersionInfo.AssemblyVersion,
-		FileVersion = parameters.VersionInfo.AssemblyFileVersion,
-		InformationalVersion = parameters.VersionInfo.AssemblyInformationalVersion,
-		Copyright = "Copyright (c) Morten Maxild."
-	});
 });
 
 Task("Clear-PackageCache")
