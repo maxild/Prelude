@@ -138,7 +138,7 @@ Task("Test")
         // .NET Framework/Mono
         DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
         {
-            Framework = "net452",
+            Framework = "net46",
             NoBuild = true,
             NoRestore = true,
             Configuration = parameters.Configuration
