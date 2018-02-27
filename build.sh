@@ -16,9 +16,9 @@ CAKE_EXE="$TOOLS_DIR/Cake/Cake.exe"
 PACKAGES_CONFIG="$TOOLS_DIR/packages.config"
 PACKAGES_CONFIG_MD5="$TOOLS_DIR/packages.config.md5sum"
 
-DOTNET_CHANNEL="preview"
-DOTNET_VERSION="1.0.0-preview2-003121"
-DOTNET_CHANNEL_INSTALLER_URL="https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0-preview2/scripts/obtain/dotnet-install.sh"
+DOTNET_CHANNEL="Current"
+DOTNET_VERSION="2.1.4"
+DOTNET_CHANNEL_INSTALLER_URL="https://dot.net/v1/dotnet-install.sh"
 
 # Define md5sum or md5 depending on Linux/OSX
 MD5_EXE=
@@ -149,11 +149,5 @@ fi
 if $SHOW_VERSION; then
     exec mono "$CAKE_EXE" --version
 else
-# C# v6 features (e.g. string interpolation) are not supported without '-experimental' flag
-#   See https://github.com/cake-build/cake/issues/293
-#   See https://github.com/cake-build/cake/issues/326
-# TODO: Is -experimental necessary on mono?
-    #exec mono "$CAKE_EXE" $SCRIPT --experimental --verbosity=$VERBOSITY --configuration=$CONFIGURATION --target=$TARGET $DRYRUN "${SCRIPT_ARGUMENTS[@]}"
-    echo "exec mono $CAKE_EXE $SCRIPT --verbosity=$VERBOSITY --configuration=$CONFIGURATION --target=$TARGET $DRYRUN ${SCRIPT_ARGUMENTS[@]}"
     exec mono "$CAKE_EXE" $SCRIPT --verbosity=$VERBOSITY --configuration=$CONFIGURATION --target=$TARGET $DRYRUN "${SCRIPT_ARGUMENTS[@]}"
 fi

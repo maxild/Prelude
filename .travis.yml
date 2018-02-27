@@ -17,7 +17,10 @@ addons:
     - libicu-dev
     - libssl-dev
     - libunwind8
-    - dotnet-dev-1.1.4
+    # build.sh uses dotnet-install
+    #- dotnet-dev-1.1.4
+    #- dotnet-sharedframework-microsoft.netcore.app-1.0.5
+    #- dotnet-sharedframework-microsoft.netcore.app-1.1.2
 
 # .NET CLI require OSX 10.10
 osx_image: xcode8.3
@@ -25,7 +28,8 @@ osx_image: xcode8.3
 mono:
   - 4.4.2
 
-dotnet: 1.0.4
+# build.sh uses dotnet-install
+dotnet: 2.0.0
 
 script:
   - ./build.sh --target Travis --configuration Debug --verbosity diagnostic
