@@ -8,7 +8,7 @@ using System.Threading;
 
 namespace Maxfire.Prelude
 {
-#if NET542
+#if NET46
     [Serializable]
 #endif
     public abstract class Enumeration
@@ -178,7 +178,7 @@ namespace Maxfire.Prelude
         }
     }
 
-#if NET452
+#if NET46
     [Serializable]
 #endif
     public abstract class Enumeration<TEnumeration> : Enumeration, IEquatable<TEnumeration>, IComparable, IComparable<TEnumeration>, IFormattable

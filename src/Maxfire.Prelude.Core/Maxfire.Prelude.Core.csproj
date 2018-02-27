@@ -1,15 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <AssemblyName>Maxfire.Prelude.Core</AssemblyName>
+    <TargetFrameworks>net46;netstandard1.5</TargetFrameworks>
+    <OutputType>Library</OutputType>
+    <PlatformTarget>AnyCpu</PlatformTarget>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
     <Description>The core library of Maxfire.Prelude. The library contains extensions to .NET BCL that can be used when running on .NET Framework 4.x or .NET Core 1.0.</Description>
     <VersionPrefix>0.2.0</VersionPrefix>
     <Authors>Morten Maxild</Authors>
-    <TargetFrameworks>net452;netstandard1.5</TargetFrameworks>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <DebugType>portable</DebugType>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <AssemblyName>Maxfire.Prelude.Core</AssemblyName>
     <PackageId>Maxfire.Prelude.Core</PackageId>
     <PackageTags>prelude</PackageTags>
     <PackageReleaseNotes>.NET Core 1.0 and .NET Framework 4.5.2 support</PackageReleaseNotes>
@@ -31,7 +34,7 @@
     <Compile Include="..\CommonAssemblyInfo.cs" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net452' ">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
     <Reference Include="System" />
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>

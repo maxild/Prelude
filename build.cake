@@ -135,14 +135,16 @@ Task("Test")
             Configuration = parameters.Configuration
         });
 
-        // .NET Framework/Mono
-        DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
-        {
-            Framework = "net46",
-            NoBuild = true,
-            NoRestore = true,
-            Configuration = parameters.Configuration
-        });
+        if (false == IsRunningOnWindows()) {
+            // .NET Framework (Mono does not work?!?)
+            DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
+            {
+                Framework = "net46",
+                NoBuild = true,
+                NoRestore = true,
+                Configuration = parameters.Configuration
+            });
+        }
     }
 
     // foreach (var testProject in GetFiles(string.Format("{0}/**/project.json", parameters.Paths.Directories.Test)))

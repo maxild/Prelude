@@ -1,13 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <AssemblyName>Maxfire.Prelude.ComponentModel.TypeConverter</AssemblyName>
+    <TargetFrameworks>net46;netstandard1.5</TargetFrameworks>
+    <OutputType>Library</OutputType>
+    <PlatformTarget>AnyCpu</PlatformTarget>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
     <VersionPrefix>0.2.0</VersionPrefix>
-    <TargetFrameworks>net452;netstandard1.5</TargetFrameworks>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <DebugType>portable</DebugType>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <AssemblyName>Maxfire.Prelude.ComponentModel.TypeConverter</AssemblyName>
     <PackageId>Maxfire.Prelude.ComponentModel.TypeConverter</PackageId>
     <PackageTags>prelude</PackageTags>
     <PackageReleaseNotes>.NET Core 1.0 and .NET Framework 4.5.2 support</PackageReleaseNotes>
@@ -33,13 +36,13 @@
     <ProjectReference Include="..\Maxfire.Prelude.Core\Maxfire.Prelude.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net452' ">
-    <Reference Include="System" />
-    <Reference Include="Microsoft.CSharp" />
-  </ItemGroup>
-
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.5' ">
     <PackageReference Include="System.ComponentModel.TypeConverter" Version="4.1.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net46' ">
+    <Reference Include="System" />
+    <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
 
 </Project>
