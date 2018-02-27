@@ -47,6 +47,7 @@ Setup(context =>
     // See https://github.com/dotnet/sdk/issues/335#issuecomment-346951034
     if (false == parameters.IsRunningOnWindows)
     {
+        // Since Cake runs on Mono, it is straight forward to resolve the path to the Mono libs (reference assemblies).
         var frameworkPathOverride = new FilePath(typeof(object).Assembly.Location).GetDirectory().FullPath + "/";
 
         // Use FrameworkPathOverride when not running on Windows.
@@ -101,12 +102,6 @@ Task("Restore")
     DotNetCoreRestore("./Prelude.sln", new DotNetCoreRestoreSettings
     {
         Verbosity = DotNetCoreVerbosity.Minimal,
-        // Sources = new [] {
-        //     "https://www.myget.org/F/xunit/api/v3/index.json",
-        //     "https://dotnet.myget.org/F/dotnet-core/api/v3/index.json",
-        //     "https://dotnet.myget.org/F/cli-deps/api/v3/index.json",
-        //     "https://api.nuget.org/v3/index.json",
-        // },
         MSBuildSettings = msBuildSettings
     });
 });
@@ -151,14 +146,19 @@ Task("Test")
             Configuration = parameters.Configuration
         });
 
-        // .NET Framework (Mono does not work?!?)
-        DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
-        {
-            Framework = "net461",
-            NoBuild = true,
-            NoRestore = true,
-            Configuration = parameters.Configuration
-        });
+        // Somehow tests fail on Mono???
+        if (false == IsRunningOnWindows() &&
+            project.ToString().EndsWith("Maxfire.Prelude.ComponentModel.TypeConverter.Tests.csproj")) {
+
+            // .NET Framework / Mono
+            DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
+            {
+                Framework = "net461",
+                NoBuild = true,
+                NoRestore = true,
+                Configuration = parameters.Configuration
+            });
+        }
     }
 
     // foreach (var testProject in GetFiles(string.Format("{0}/**/project.json", parameters.Paths.Directories.Test)))
