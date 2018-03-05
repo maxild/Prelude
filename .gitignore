@@ -22,7 +22,6 @@ src/CommonAssemblyInfo.cs
 
 # Build results
 artifacts/
-project.lock.json
 [Dd]ebug/
 [Rr]elease/
 [Bb]in/
