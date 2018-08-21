@@ -1,32 +1,52 @@
 <Project>
+  <!-- General package metadata -->
   <PropertyGroup>
     <PackageId>$(AssemblyName)</PackageId>
-    <!--
-    <Copyright>Copyright (c) .NET Foundation and contributors</Copyright>
+    <Copyright>Copyright (c) Morten Maxild 2016</Copyright>
     <Authors>Morten Maxild</Authors>
-    <Company></Company>
-    <PackageLicenseUrl>https://github.com/cake-build/cake/blob/develop/LICENSE</PackageLicenseUrl>
-    <PackageIconUrl>https://raw.githubusercontent.com/cake-build/graphics/master/png/cake-medium.png</PackageIconUrl>
-    <RepositoryUrl>https://github.com/cake-build/cake</RepositoryUrl>
+    <Company>Morten Maxild</Company>
+    <RepositoryUrl>https://github.com/maxild/Prelude</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>Cake;Script;Build</PackageTags>
-    -->
+    <PackageTags>maxfire prelude</PackageTags>
   </PropertyGroup>
   <PropertyGroup>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
+  <!-- Misc -->
+  <PropertyGroup>
+    <!-- <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netcoreapp1.1' ">1.6.0</NetStandardImplicitPackageVersion>
+    <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netcoreapp2.0' ">2.0.0</NetStandardImplicitPackageVersion>
+    <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">2.1.0</NetStandardImplicitPackageVersion> -->
+  </PropertyGroup>
+  <!-- Common Assembly Information  -->
+  <ItemGroup Condition="$(IsTestProject) != 'true'">
+    <Compile Include="..\CommonAssemblyInfo.cs" />
+  </ItemGroup>
+  <!-- Mono support for dotnet-xunit (hack) -->
+  <ItemGroup Condition="$(IsTestProject) == 'true'">
+    <Content Include="..\xunit.runner.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
   <!-- Define .NET Core constants -->
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.5' ">
-    <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
+    <DefineConstants>$(DefineConstants);NETCORE;NETCORE1</DefineConstants>
     <DebugType>portable</DebugType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
     <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
     <DebugType>portable</DebugType>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp1.1' ">
+    <DefineConstants>$(DefineConstants);NETCORE;NETCORE1</DefineConstants>
+    <DebugType>portable</DebugType>
+  </PropertyGroup>
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.0' ">
-    <NetStandardImplicitPackageVersion>2.0.0</NetStandardImplicitPackageVersion>
+    <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
+    <DebugType>portable</DebugType>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">
     <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
     <DebugType>portable</DebugType>
   </PropertyGroup>
@@ -41,12 +61,4 @@
     <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
   </PropertyGroup>
-  <ItemGroup Condition="$(IsTestProject) != 'true'">
-    <Compile Include="..\CommonAssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup Condition="$(IsTestProject) == 'true'">
-    <Content Include="..\xunit.runner.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
 </Project>
