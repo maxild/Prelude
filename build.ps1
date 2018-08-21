@@ -88,6 +88,10 @@ if ((Test-Path $PSScriptRoot) -and (-not (Test-Path $TOOLS_DIR))) {
     New-Item -Path $TOOLS_DIR -Type directory | out-null
 }
 
+# This will force the use of TLS 1.2 (you can also make it use 1.1 if you want for some reason).
+# To avoid the exception: "The underlying connection was closed: An unexpected error occurred on a send."
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
 ###########################################################################
 # Install .NET Core SDK
 ###########################################################################
