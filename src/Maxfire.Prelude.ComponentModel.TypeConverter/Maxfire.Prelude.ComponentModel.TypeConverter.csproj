@@ -2,21 +2,17 @@
 
   <PropertyGroup>
     <AssemblyName>Maxfire.Prelude.ComponentModel.TypeConverter</AssemblyName>
-    <TargetFrameworks>net461;netstandard1.5</TargetFrameworks>
+    <RootNamespace>Maxfire.Prelude.ComponentModel</RootNamespace>
+    <TargetFrameworks>net452;netstandard1.5</TargetFrameworks>
     <OutputType>Library</OutputType>
     <PlatformTarget>AnyCpu</PlatformTarget>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsTestProject>false</IsTestProject>
+  </PropertyGroup>
 
-    <VersionPrefix>0.2.0</VersionPrefix>
-
-    <PackageId>Maxfire.Prelude.ComponentModel.TypeConverter</PackageId>
-    <PackageTags>prelude</PackageTags>
-    <PackageReleaseNotes>.NET Core 1.0 and .NET Framework 4.5.2 support</PackageReleaseNotes>
-    <PackageProjectUrl>https://github.com/maxild/Prelude/</PackageProjectUrl>
-    <PackageLicenseUrl>http://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
-    <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/maxild/Prelude/</RepositoryUrl>
-
+  <!-- Package specific metadata -->
+  <PropertyGroup>
+    <Description>The TypeConverter library of Maxfire.Prelude. The library contains extensions to .NET BCL that can be used when running on .NET Framework or .NET Core.</Description>
   </PropertyGroup>
 
   <Import Project="..\..\Shared.msbuild" />
@@ -26,12 +22,7 @@
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.5' ">
-    <PackageReference Include="System.ComponentModel.TypeConverter" Version="4.1.0" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
-    <Reference Include="System" />
-    <Reference Include="Microsoft.CSharp" />
+    <PackageReference Include="System.ComponentModel.TypeConverter" Version="4.3.0" />
   </ItemGroup>
 
 </Project>

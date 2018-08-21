@@ -1,7 +1,4 @@
-using System;
 using System.Reflection;
-
-[assembly: CLSCompliant(true)]
 
 #if NETSTANDARD1_0
 [assembly: AssemblyTitle("Maxfire.Prelude.Core .NET Standard 1.0")]

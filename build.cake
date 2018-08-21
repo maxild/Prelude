@@ -1,8 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // TOOLS
 ///////////////////////////////////////////////////////////////////////////////
-#tool "nuget:?package=gitreleasemanager&version=0.6.0"
-#tool "nuget:?package=xunit.runner.console&version=2.1.0"
+#tool "nuget:?package=gitreleasemanager&version=0.7.1"
 
 ///////////////////////////////////////////////////////////////////////////////
 // SCRIPTS
@@ -114,7 +113,7 @@ Task("Build")
     var path = MakeAbsolute(new DirectoryPath("./Prelude.sln"));
     DotNetCoreBuild(path.FullPath, new DotNetCoreBuildSettings()
     {
-        //VersionSuffix = parameters.VersionInfo.VersionSuffix,
+        //VersionSuffix = parameters.VersionInfo.VersionSuffix, // TODO: Skal fjernes!!!
         Configuration = parameters.Configuration,
         NoRestore = true,
         MSBuildSettings = msBuildSettings
@@ -128,39 +127,24 @@ Task("Test")
     var testProjects = GetFiles($"./{parameters.Paths.Directories.Test}/**/*.csproj");
     foreach(var project in testProjects)
     {
-        // .NET Core 1.1
-        DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
-        {
-            Framework = "netcoreapp1.1",
-            NoBuild = true,
-            NoRestore = true,
-            Configuration = parameters.Configuration
-        });
-
-        // .NET Core 2.x
-        DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
-        {
-            Framework = "netcoreapp2.0",
-            NoBuild = true,
-            NoRestore = true,
-            Configuration = parameters.Configuration
-        });
-
-        // Microsoft does not officially support Mono via .NET Core SDK. Their support for .NET Core
-        // on Linux and OS X starts and ends with .NET Core. Anyway we test on Mono for now, and maybe
-        // remove Mono support soon.
-        if (true /* false == IsRunningOnWindows() */) {
-            // .NET Framework / Mono
-            // For Mono to support dotnet-xunit we have to put { "appDomain": "denied" } in config
-            // See https://github.com/xunit/xunit/issues/1357#issuecomment-314416426
+        foreach (var tfm in new [] {"netcoreapp1.1", "netcoreapp2.0", "netcoreapp2.1", "net452"}) {
             DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
             {
-                Framework = "net461",
+                Framework = tfm,
                 NoBuild = true,
                 NoRestore = true,
                 Configuration = parameters.Configuration
             });
         }
+
+        // NOTE: .NET Framework / Mono (net452 on *nix and Mac OSX)
+        // ========================================================
+        // Microsoft does not officially support Mono via .NET Core SDK. Their support for .NET Core
+        // on Linux and OS X starts and ends with .NET Core. Anyway we test on Mono for now, and maybe
+        // remove Mono support soon.
+        //
+        // For Mono to support dotnet-xunit we have to put { "appDomain": "denied" } in config
+        // See https://github.com/xunit/xunit/issues/1357#issuecomment-314416426
     }
 });
 
@@ -179,6 +163,8 @@ Task("Package")
             OutputDirectory = parameters.Paths.Directories.Artifacts,
             NoBuild = true,
             NoRestore = true,
+            //symbols = true,
+            //NoPackageAnalysis = true,
             IncludeSymbols = true, // ????
             MSBuildSettings = msBuildSettings
         });
@@ -227,7 +213,7 @@ Task("Upload-AppVeyor-Release-Artifacts")
     }
 });
 
-// Debug builds are published to MyGet CI feed
+// Debug builds are published to CI feed
 Task("Publish-CIFeed-MyGet")
     .IsDependentOn("Package")
     .WithCriteria(() => parameters.ConfigurationIsDebug)
@@ -253,7 +239,7 @@ Task("Publish-CIFeed-MyGet")
     publishingError = true;
 });
 
-// Release builds are published to NuGet.Org production feed
+// Release builds are published to production feed
 Task("Publish-ProdFeed-NuGet")
     .IsDependentOn("Package")
     .WithCriteria(() => parameters.ConfigurationIsRelease)
@@ -358,6 +344,8 @@ Task("Generate-CommonAssemblyInfo")
 // </auto-generated>
 //------------------------------------------------------------------------------
 
+[assembly: System.CLSCompliant(true)]
+
 [assembly: AssemblyProduct(""Maxfire.Prelude"")]
 [assembly: AssemblyVersion(""{0}"")]
 [assembly: AssemblyFileVersion(""{1}"")]
@@ -377,37 +365,6 @@ Task("Generate-CommonAssemblyInfo")
 
     // Generate ./src/CommonAssemblyInfo.cs that is ignored by GIT
     System.IO.File.WriteAllText(parameters.Paths.Files.CommonAssemblyInfo.FullPath, content, Encoding.UTF8);
-});
-
-Task("Clear-PackageCache")
-    .Does(() =>
-{
-    Information("Clearing NuGet package caches...");
-
-    // NuGet restore with single source (nuget.org v3 feed) reports
-    //    Feeds used:
-    //        %LOCALAPPDATA%\NuGet\Cache          (packages-cache)
-    //        C:\Users\Maxfire\.nuget\packages\   (global-packages)
-    //        https://api.nuget.org/v3/index.json (only configured feed)
-
-    var nugetCaches = new Dictionary<string, bool>
-    {
-        {"http-cache", false},      // %LOCALAPPDATA%\NuGet\v3-cache
-        {"packages-cache", true},   // %LOCALAPPDATA%\NuGet\Cache
-        {"global-packages", true},  // ~\.nuget\packages\
-        {"temp", false},            // %LOCALAPPDATA%\Temp\NuGetScratch
-    };
-
-    var nuget = parameters.Paths.Tools.NuGet.FullPath;
-
-    foreach (var cache in nugetCaches.Where(kvp => kvp.Value).Select(kvp => kvp.Key))
-    {
-        Information("Clearing nuget resources in {0}.", cache);
-        int exitCode = Run(nuget, string.Format("locals {0} -clear -verbosity detailed", cache));
-        FailureHelper.ExceptionOnError(exitCode, string.Format("Failed to clear nuget {0}.", cache));
-    }
-
-    Information("NuGet package cache clearing was succesful!");
 });
 
 ///////////////////////////////////////////////////////////////////////////////

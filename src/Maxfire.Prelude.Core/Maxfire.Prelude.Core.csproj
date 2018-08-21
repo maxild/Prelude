@@ -2,29 +2,19 @@
 
   <PropertyGroup>
     <AssemblyName>Maxfire.Prelude.Core</AssemblyName>
-    <TargetFrameworks>net461;netstandard1.5</TargetFrameworks>
+    <RootNamespace>Maxfire.Prelude</RootNamespace>
+    <TargetFrameworks>net452;netstandard1.5</TargetFrameworks>
     <OutputType>Library</OutputType>
     <PlatformTarget>AnyCpu</PlatformTarget>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsTestProject>false</IsTestProject>
+  </PropertyGroup>
 
-    <VersionPrefix>0.2.0</VersionPrefix>
-
-    <Description>The core library of Maxfire.Prelude. The library contains extensions to .NET BCL that can be used when running on .NET Framework 4.x or .NET Core 1.0.</Description>
-    <Authors>Morten Maxild</Authors>
-    <PackageId>Maxfire.Prelude.Core</PackageId>
-    <PackageTags>prelude</PackageTags>
-    <PackageReleaseNotes>.NET Core 1.0 and .NET Framework 4.5.2 support</PackageReleaseNotes>
-    <PackageProjectUrl>https://github.com/maxild/Prelude/</PackageProjectUrl>
-    <PackageLicenseUrl>http://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
-    <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/maxild/Prelude/</RepositoryUrl>
+  <!-- Package specific metadata -->
+  <PropertyGroup>
+    <Description>The Core library of Maxfire.Prelude. The library contains extensions to .NET BCL that can be used when running on .NET Framework or .NET Core.</Description>
   </PropertyGroup>
 
   <Import Project="..\..\Shared.msbuild" />
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
-    <Reference Include="System" />
-    <Reference Include="Microsoft.CSharp" />
-  </ItemGroup>
 
 </Project>
