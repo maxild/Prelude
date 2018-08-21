@@ -17,9 +17,4 @@
 
   <Import Project="..\..\Shared.msbuild" />
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net452' ">
-    <Reference Include="System" />
-    <Reference Include="Microsoft.CSharp" />
-  </ItemGroup>
-
 </Project>
