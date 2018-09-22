@@ -113,7 +113,6 @@ Task("Build")
     var path = MakeAbsolute(new DirectoryPath("./Prelude.sln"));
     DotNetCoreBuild(path.FullPath, new DotNetCoreBuildSettings()
     {
-        //VersionSuffix = parameters.VersionInfo.VersionSuffix, // TODO: Skal fjernes!!!
         Configuration = parameters.Configuration,
         NoRestore = true,
         MSBuildSettings = msBuildSettings
@@ -158,14 +157,10 @@ Task("Package")
     foreach(var project in projects)
     {
         DotNetCorePack(project.FullPath, new DotNetCorePackSettings {
-            //VersionSuffix = parameters.VersionInfo.VersionSuffix,
             Configuration = parameters.Configuration,
             OutputDirectory = parameters.Paths.Directories.Artifacts,
             NoBuild = true,
             NoRestore = true,
-            //symbols = true,
-            //NoPackageAnalysis = true,
-            IncludeSymbols = true, // ????
             MSBuildSettings = msBuildSettings
         });
     }
