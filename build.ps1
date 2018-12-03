@@ -115,7 +115,18 @@ Function Remove-PathVariable([string]$VariableToRemove)
 
 $FoundDotNetSdkVersion = $null
 if (Get-Command dotnet -ErrorAction SilentlyContinue) {
-    $FoundDotNetSdkVersion = dotnet --version
+    # dotnet --version will use version found in global.json, but the SDK will error if the
+    # global.json version is not found on the machine.
+    $FoundDotNetSdkVersion = & dotnet --version 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        # Extract the first line of the message without making powershell write any error messages
+        Write-Host ($FoundDotNetSdkVersion | ForEach-Object { "$_" } | select-object -first 1)
+        Write-Host "That is not problem, we will install the SDK version below."
+        $FoundDotNetSdkVersion = "" # Force installation of .NET Core SDK via dotnet-install script
+    }
+    else {
+        Write-Host ".NET Core SDK version $FoundDotNetSdkVersion found."
+    }
 }
 
 if ($FoundDotNetSdkVersion -ne $DotNetSdkVersion) {
@@ -256,7 +267,7 @@ if (-not $SkipToolPackageRestore.IsPresent) {
 }
 
 # Install re-usable cake scripts, using the latest version
-# Note: We cannot put the package reference into ./tools/packages.json, because this file does not support floating versions
+# Note: We cannot put the package reference into ./tools/packages.config, because this file does not support floating versions
 if (-not $SkipToolPackageRestore.IsPresent) {
     if (-not (Test-Path (Join-Path $TOOLS_DIR 'Maxfire.CakeScripts'))) {
         Write-Verbose -Message "Restoring Maxfire.CakeScripts from MyGet feed..."
