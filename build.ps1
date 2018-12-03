@@ -73,9 +73,9 @@ $CakeScriptsVersion = "latest" # 'latest' or 'major.minor.patch'
 #              fetch a value for -Version
 $DotNetChannel = "Current" # Current - most current release
 # .NET Core SDK version
-$DotNetSdkVersion = "2.1.302" # 'latest' or x.y.z is supported
+$DotNetSdkVersion = "2.1.500" # 'latest' or x.y.z is supported
 # .NET Core Runtime version (older release/runtime to install)
-$DotNetRuntimeVersions="1.1.9;2.0.9" # pinned runtimes, but we do not pin 2.1.x runtime????? maybe use channel 1.1 and 2.0???
+$DotNetRuntimeVersions = "" # do not download standalone shared-runtimes
 
 if ((-not ($NuGetVersion -eq "latest")) -and (-not $NuGetVersion.StartsWith("v"))) {
     $NuGetVersion = ("v" + $NuGetVersion)

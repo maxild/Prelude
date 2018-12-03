@@ -17,9 +17,9 @@ PACKAGES_CONFIG="$TOOLS_DIR/packages.config"
 PACKAGES_CONFIG_MD5="$TOOLS_DIR/packages.config.md5sum"
 
 # .NET Core SDK version (with 2.x release/runtime)
-DOTNET_SDK_VERSION="2.1.301" # TODO: How to specify latest 2.1.x release (Current)?
+DOTNET_SDK_VERSION="2.1.500" # TODO: How to specify latest 2.1.x release (Current)?
 # .NET Core Runtime version (older release/runtime to install)
-DOTNET_RUNTIME_VERSION="1.1.7" # TODO: How to specify latest 1.1.x release (LTS)?
+DOTNET_RUNTIME_VERSION="" # TODO: How to specify latest 1.1.x release (LTS)?
 
 # Define md5sum or md5 depending on Linux/OSX
 MD5_EXE=
