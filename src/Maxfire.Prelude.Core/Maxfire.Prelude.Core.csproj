@@ -1,20 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <AssemblyName>Maxfire.Prelude.Core</AssemblyName>
-    <RootNamespace>Maxfire.Prelude</RootNamespace>
-    <TargetFrameworks>net452;netstandard1.5</TargetFrameworks>
-    <OutputType>Library</OutputType>
-    <PlatformTarget>AnyCpu</PlatformTarget>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <IsTestProject>false</IsTestProject>
-  </PropertyGroup>
+    <PropertyGroup>
+        <RootNamespace>Maxfire.Prelude</RootNamespace>
+    </PropertyGroup>
 
-  <!-- Package specific metadata -->
-  <PropertyGroup>
-    <Description>The Core library of Maxfire.Prelude. The library contains extensions to .NET BCL that can be used when running on .NET Framework or .NET Core.</Description>
-  </PropertyGroup>
-
-  <Import Project="..\..\Shared.msbuild" />
+    <!-- Package specific metadata -->
+    <PropertyGroup>
+        <Description>The Core library in Maxfire.Prelude (Configuration = $(Configuration)).</Description>
+    </PropertyGroup>
 
 </Project>

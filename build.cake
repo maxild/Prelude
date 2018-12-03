@@ -37,8 +37,10 @@ Setup(context =>
     }
 
     msBuildSettings = new DotNetCoreMSBuildSettings()
-                        //.WithProperty("Version", parameters.VersionInfo.SemVer)
-                        .WithProperty("Version", parameters.VersionInfo.NuGetVersion)
+                        .WithProperty("RepositoryBranch", parameters.Git.Branch)        // gitflow branch
+                        .WithProperty("RepositoryCommit", parameters.Git.Sha)           // full sha
+                        //.WithProperty("Version", parameters.VersionInfo.SemVer)       // semver 2.0 compatible
+                        .WithProperty("Version", parameters.VersionInfo.NuGetVersion)   // padded with zeros, because of lexical nuget sort order
                         .WithProperty("AssemblyVersion", parameters.VersionInfo.AssemblyVersion)
                         .WithProperty("FileVersion", parameters.VersionInfo.AssemblyFileVersion);
                         //.WithProperty("PackageReleaseNotes", string.Concat("\"", releaseNotes, "\""));
@@ -47,9 +49,11 @@ Setup(context =>
     if (false == parameters.IsRunningOnWindows)
     {
         // Since Cake runs on Mono, it is straight forward to resolve the path to the Mono libs (reference assemblies).
+        // Find where .../mono/5.2/mscorlib.dll is on your machine.
         var frameworkPathOverride = new FilePath(typeof(object).Assembly.Location).GetDirectory().FullPath + "/";
 
-        // Use FrameworkPathOverride when not running on Windows.
+        // Use FrameworkPathOverride when not running on Windows. MSBuild uses
+        // this property to locate the Framework libraries required to build your code.
         Information("Build will use FrameworkPathOverride={0} since not building on Windows.", frameworkPathOverride);
         msBuildSettings.WithProperty("FrameworkPathOverride", frameworkPathOverride);
     }
@@ -98,9 +102,10 @@ Task("Clean")
 Task("Restore")
     .Does(() =>
 {
-    DotNetCoreRestore("./Prelude.sln", new DotNetCoreRestoreSettings
+    DotNetCoreRestore(parameters.Paths.Files.Solution.FullPath, new DotNetCoreRestoreSettings
     {
         Verbosity = DotNetCoreVerbosity.Minimal,
+        ConfigFile = "./NuGet.config",
         MSBuildSettings = msBuildSettings
     });
 });
@@ -110,8 +115,7 @@ Task("Build")
     .IsDependentOn("Restore")
     .Does(() =>
 {
-    var path = MakeAbsolute(new DirectoryPath("./Prelude.sln"));
-    DotNetCoreBuild(path.FullPath, new DotNetCoreBuildSettings()
+    DotNetCoreBuild(parameters.Paths.Files.Solution.FullPath, new DotNetCoreBuildSettings()
     {
         Configuration = parameters.Configuration,
         NoRestore = true,
@@ -126,7 +130,11 @@ Task("Test")
     var testProjects = GetFiles($"./{parameters.Paths.Directories.Test}/**/*.csproj");
     foreach(var project in testProjects)
     {
-        foreach (var tfm in new [] {"netcoreapp1.1", "netcoreapp2.0", "netcoreapp2.1", "net452"}) {
+        // This takes time...maybe only run tests on a single runtime when developing
+        // What TFM should we use for desktop? net452 or net472...it doesn't matter net452 and net472 cannot be installed side-by-side
+        // What TFM should we use for core? 2.0 or 2.1...both or newest...2.1 should be sufficient
+        foreach (var tfm in new [] {"net472", "netcoreapp2.1"})
+        {
             DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
             {
                 Framework = tfm,
@@ -152,7 +160,7 @@ Task("Package")
     .IsDependentOn("Test")
     .Does(() =>
 {
-    // Build libraries
+    // Only packable projects will produce nupkg's
     var projects = GetFiles($"{parameters.Paths.Directories.Src}/**/*.csproj");
     foreach(var project in projects)
     {

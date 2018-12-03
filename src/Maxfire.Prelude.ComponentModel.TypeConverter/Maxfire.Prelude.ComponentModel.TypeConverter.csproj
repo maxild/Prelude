@@ -1,28 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <AssemblyName>Maxfire.Prelude.ComponentModel.TypeConverter</AssemblyName>
-    <RootNamespace>Maxfire.Prelude.ComponentModel</RootNamespace>
-    <TargetFrameworks>net452;netstandard1.5</TargetFrameworks>
-    <OutputType>Library</OutputType>
-    <PlatformTarget>AnyCpu</PlatformTarget>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <IsTestProject>false</IsTestProject>
-  </PropertyGroup>
+    <PropertyGroup>
+        <RootNamespace>Maxfire.Prelude.ComponentModel</RootNamespace>
+    </PropertyGroup>
 
-  <!-- Package specific metadata -->
-  <PropertyGroup>
-    <Description>The TypeConverter library of Maxfire.Prelude. The library contains extensions to .NET BCL that can be used when running on .NET Framework or .NET Core.</Description>
-  </PropertyGroup>
+    <!-- Package specific metadata -->
+    <PropertyGroup>
+        <Description>The TypeConverter library in Maxfire.Prelude (Configuration = $(Configuration)).</Description>
+    </PropertyGroup>
 
-  <Import Project="..\..\Shared.msbuild" />
+    <ItemGroup>
+        <ProjectReference Include="..\Maxfire.Prelude.Core\Maxfire.Prelude.Core.csproj" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Maxfire.Prelude.Core\Maxfire.Prelude.Core.csproj" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.5' ">
-    <PackageReference Include="System.ComponentModel.TypeConverter" Version="4.3.0" />
-  </ItemGroup>
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+        <PackageReference Include="System.ComponentModel.TypeConverter" Version="4.3.0" />
+    </ItemGroup>
 
 </Project>

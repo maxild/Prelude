@@ -8,9 +8,7 @@ using System.Threading;
 
 namespace Maxfire.Prelude
 {
-#if !NETCORE1
     [Serializable]
-#endif
     public abstract class Enumeration
     {
         protected Enumeration(int value, string name) : this(value, name, name)
@@ -178,9 +176,7 @@ namespace Maxfire.Prelude
         }
     }
 
-#if !NETCORE1
     [Serializable]
-#endif
     public abstract class Enumeration<TEnumeration> : Enumeration, IEquatable<TEnumeration>, IComparable, IComparable<TEnumeration>, IFormattable
         where TEnumeration : Enumeration<TEnumeration>
     {
