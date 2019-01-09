@@ -246,7 +246,7 @@ namespace Maxfire.Prelude
 		    return obj != null && GetType() == obj.GetType() && Value == ((TEnumeration) obj).Value;
 		}
 
-        public bool Equals(TEnumeration other)
+        public virtual bool Equals(TEnumeration other)
         {
             // even here we test for type equality, because the derived classes can (in theory) be based on deep inheritance chains
             return other != null && GetType() == other.GetType() && Value == other.Value;
