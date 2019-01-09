@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // TOOLS
 ///////////////////////////////////////////////////////////////////////////////
-#tool "nuget:?package=gitreleasemanager&version=0.7.1"
+#tool "nuget:?package=gitreleasemanager&version=0.8.0"
 
 ///////////////////////////////////////////////////////////////////////////////
 // SCRIPTS
@@ -31,7 +31,8 @@ DotNetCoreMSBuildSettings msBuildSettings = null;
 
 Setup(context =>
 {
-    if (parameters.Git.IsMasterBranch && context.Log.Verbosity != Verbosity.Diagnostic) {
+    if (parameters.Git.IsMasterBranch && context.Log.Verbosity != Verbosity.Diagnostic)
+    {
         Information("Increasing verbosity to diagnostic.");
         context.Log.Verbosity = Verbosity.Diagnostic;
     }
@@ -194,7 +195,6 @@ Task("Upload-AppVeyor-Debug-Artifacts")
     .WithCriteria(() => parameters.Git.IsDevelopmentLineBranch && parameters.ConfigurationIsDebug)
     .Does(() =>
 {
-    // TODO: Both NAME.nupkg and NAME.symbols.nupkg?
     foreach (var package in GetFiles(parameters.Paths.Directories.Artifacts + "/*.nupkg"))
     {
         // appveyor PushArtifact <path> [options] (See https://www.appveyor.com/docs/build-worker-api/#push-artifact)
@@ -208,7 +208,6 @@ Task("Upload-AppVeyor-Release-Artifacts")
     .WithCriteria(() => parameters.Git.IsReleaseLineBranch && parameters.ConfigurationIsRelease)
     .Does(() =>
 {
-    // TODO: Both NAME.nupkg and NAME.symbols.nupkg?
     foreach (var package in GetFiles(parameters.Paths.Directories.Artifacts + "/*.nupkg"))
     {
         // appveyor PushArtifact <path> [options] (See https://www.appveyor.com/docs/build-worker-api/#push-artifact)
@@ -279,7 +278,7 @@ Task("Create-Release-Notes")
     string milestone = Environment.GetEnvironmentVariable("GitHubMilestone") ??
                        parameters.VersionInfo.Milestone;
     Information("Creating draft release of version '{0}' on GitHub", milestone);
-    GitReleaseManagerCreate(parameters.GitHub.UserName, parameters.GitHub.Password,
+    GitReleaseManagerCreate(parameters.GitHub.GetRequiredToken(),
                             parameters.GitHub.RepositoryOwner, parameters.GitHub.RepositoryName,
         new GitReleaseManagerCreateSettings
         {
@@ -296,17 +295,15 @@ Task("Publish-GitHub-Release")
     .WithCriteria(() => parameters.ConfigurationIsRelease)
     .Does(() =>
 {
-    // TODO: Both NAME.nupkg and NAME.symbols.nupkg?
     foreach (var package in GetFiles(parameters.Paths.Directories.Artifacts + "/*.nupkg"))
     {
-        GitReleaseManagerAddAssets(parameters.GitHub.UserName, parameters.GitHub.Password,
+        GitReleaseManagerAddAssets(parameters.GitHub.GetRequiredToken(),
                                    parameters.GitHub.RepositoryOwner, parameters.GitHub.RepositoryName,
                                    parameters.VersionInfo.Milestone, package.FullPath);
-
     }
 
     // Close the milestone
-    GitReleaseManagerClose(parameters.GitHub.UserName, parameters.GitHub.Password,
+    GitReleaseManagerClose(parameters.GitHub.GetRequiredToken(),
                            parameters.GitHub.RepositoryOwner, parameters.GitHub.RepositoryName,
                            parameters.VersionInfo.Milestone);
 })

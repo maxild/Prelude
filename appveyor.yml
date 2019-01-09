@@ -1,8 +1,8 @@
 image: Visual Studio 2017
 
 environment:
-  github_password:
-    secure: MSpb924hdiyXPSuUSzWG/w==
+  github_access_token:
+    secure: sOkKqarHR1gImuuGCVvYsglaM+1mopF/c2YmzqDR4KyFgy2l4tlDlTExxdq68TZW
   # MyGet apikey
   CI_DEPLOYMENT_API_KEY:
     secure: EOVLFyiHRhh9Jij3/mITdSV5JH1SzT8JUbqqTIFtvOPndNeMme3mME01ws3+5nFB
