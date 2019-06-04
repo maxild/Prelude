@@ -3,8 +3,7 @@
     <Import Project="..\Directory.Build.props" />
 
     <PropertyGroup>
-        <!-- Drop net452 when all consumers run on net472 -->
-        <TargetFrameworks>netstandard2.0;net452</TargetFrameworks>
+        <TargetFrameworks>netstandard2.0</TargetFrameworks>
         <IsTestProject>false</IsTestProject>
         <IsPackable>true</IsPackable>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>

@@ -132,7 +132,7 @@ Task("Test")
     foreach(var project in testProjects)
     {
         // This takes time...maybe only run tests on a single runtime when developing
-        // What TFM should we use for desktop? net452 or net472...it doesn't matter net452 and net472 cannot be installed side-by-side
+        // What TFM should we use for desktop? it doesn't matter net452 and net472 cannot be installed side-by-side
         // What TFM should we use for core? 2.0 or 2.1...both or newest...2.1 should be sufficient
         foreach (var tfm in new [] {"net472", "netcoreapp2.1"})
         {
@@ -145,7 +145,7 @@ Task("Test")
             });
         }
 
-        // NOTE: .NET Framework / Mono (net452 on *nix and Mac OSX)
+        // NOTE: .NET Framework / Mono (net472 on *nix and Mac OSX)
         // ========================================================
         // Microsoft does not officially support Mono via .NET Core SDK. Their support for .NET Core
         // on Linux and OS X starts and ends with .NET Core. Anyway we test on Mono for now, and maybe
