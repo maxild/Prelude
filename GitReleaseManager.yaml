@@ -1,25 +1,43 @@
 issue-labels-include:
-- build
-- bug
-- enhancement
-- feature
-- optimization
-- breaking
+  - build
+  - bug
+  - enhancement
+  - feature
+  - optimization
+  - breaking
 issue-labels-exclude:
-- help wanted
-- question
-- invalid
-- wontfix
-- duplicate
-- discussion
-- docs
-- investigate
-- idea
-- refactoring
-- workflow
-- tests
-- 'Planning: MilestoneMaster'
+  - help wanted
+  - question
+  - invalid
+  - wontfix
+  - duplicate
+  - discussion
+  - docs
+  - investigate
+  - idea
+  - refactoring
+  - workflow
+  - tests
+  - "Planning: MilestoneMaster"
 issue-labels-alias:
-    - name:    breaking
-      header:  breaking change
-      plural:  breaking changes
+  - name: breaking
+    header: breaking change
+    plural: breaking changes
+  - name: build
+    header: tooling
+    plural: tooling
+  - name: breaking
+    header: breaking change
+    plural: breaking changes
+  - name: behavior-change
+    header: behavior breaking change
+    plural: behavior breaking changes
+  - name: api-breaking
+    header: API breaking change
+    plural: API breaking changes
+  - name: api-deprecation
+    header: API deprecation change
+    plural: API deprecation changes
+  - name: api-move
+    header: API move change
+    plural: API move changes

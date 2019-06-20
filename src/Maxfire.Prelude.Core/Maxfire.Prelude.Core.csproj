@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <RootNamespace>Maxfire.Prelude</RootNamespace>
+    </PropertyGroup>
+
+    <!-- Package specific metadata -->
+    <PropertyGroup>
+        <Description>The Core library in Maxfire.Prelude (Configuration = $(Configuration)).</Description>
+    </PropertyGroup>
+
+</Project>

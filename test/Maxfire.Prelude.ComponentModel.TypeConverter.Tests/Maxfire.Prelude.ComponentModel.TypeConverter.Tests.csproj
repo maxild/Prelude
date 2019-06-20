@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <RootNamespace>Maxfire.Prelude.ComponentModel.Tests</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Maxfire.Prelude.ComponentModel.TypeConverter\Maxfire.Prelude.ComponentModel.TypeConverter.csproj" />
+    </ItemGroup>
+
+</Project>

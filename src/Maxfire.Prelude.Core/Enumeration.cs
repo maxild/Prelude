@@ -8,9 +8,7 @@ using System.Threading;
 
 namespace Maxfire.Prelude
 {
-#if NET542
     [Serializable]
-#endif
     public abstract class Enumeration
     {
         protected Enumeration(int value, string name) : this(value, name, name)
@@ -178,9 +176,7 @@ namespace Maxfire.Prelude
         }
     }
 
-#if NET452
     [Serializable]
-#endif
     public abstract class Enumeration<TEnumeration> : Enumeration, IEquatable<TEnumeration>, IComparable, IComparable<TEnumeration>, IFormattable
         where TEnumeration : Enumeration<TEnumeration>
     {
@@ -250,7 +246,7 @@ namespace Maxfire.Prelude
 		    return obj != null && GetType() == obj.GetType() && Value == ((TEnumeration) obj).Value;
 		}
 
-        public bool Equals(TEnumeration other)
+        public virtual bool Equals(TEnumeration other)
         {
             // even here we test for type equality, because the derived classes can (in theory) be based on deep inheritance chains
             return other != null && GetType() == other.GetType() && Value == other.Value;

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <RootNamespace>Maxfire.Prelude.ComponentModel</RootNamespace>
+    </PropertyGroup>
+
+    <!-- Package specific metadata -->
+    <PropertyGroup>
+        <Description>The TypeConverter library in Maxfire.Prelude (Configuration = $(Configuration)).</Description>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Maxfire.Prelude.Core\Maxfire.Prelude.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+        <PackageReference Include="System.ComponentModel.TypeConverter" Version="$(SystemComponentModelTypeConverterPackageVersion)" />
+    </ItemGroup>
+
+</Project>

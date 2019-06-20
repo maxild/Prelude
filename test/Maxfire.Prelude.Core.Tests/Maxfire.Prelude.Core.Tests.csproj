@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <RootNamespace>Maxfire.Prelude.Tests</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Maxfire.Prelude.Core\Maxfire.Prelude.Core.csproj" />
+    </ItemGroup>
+
+</Project>

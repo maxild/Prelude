@@ -1,8 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // TOOLS
 ///////////////////////////////////////////////////////////////////////////////
-#tool "nuget:?package=gitreleasemanager&version=0.6.0"
-#tool "nuget:?package=xunit.runner.console&version=2.1.0"
+#tool "nuget:?package=gitreleasemanager&version=0.8.0"
 
 ///////////////////////////////////////////////////////////////////////////////
 // SCRIPTS
@@ -24,6 +23,7 @@ var parameters = CakeScripts.GetParameters(
         DeployToProdFeedUrl = "https://www.nuget.org/api/v2/package"             // NuGet.org feed url
     });
 bool publishingError = false;
+DotNetCoreMSBuildSettings msBuildSettings = null;
 
 ///////////////////////////////////////////////////////////////////////////////
 // SETUP / TEARDOWN
@@ -31,9 +31,32 @@ bool publishingError = false;
 
 Setup(context =>
 {
-    if (parameters.Git.IsMasterBranch && context.Log.Verbosity != Verbosity.Diagnostic) {
+    if (parameters.Git.IsMasterBranch && context.Log.Verbosity != Verbosity.Diagnostic)
+    {
         Information("Increasing verbosity to diagnostic.");
         context.Log.Verbosity = Verbosity.Diagnostic;
+    }
+
+    msBuildSettings = new DotNetCoreMSBuildSettings()
+                        .WithProperty("RepositoryBranch", parameters.Git.Branch)        // gitflow branch
+                        .WithProperty("RepositoryCommit", parameters.Git.Sha)           // full sha
+                        //.WithProperty("Version", parameters.VersionInfo.SemVer)       // semver 2.0 compatible
+                        .WithProperty("Version", parameters.VersionInfo.NuGetVersion)   // padded with zeros, because of lexical nuget sort order
+                        .WithProperty("AssemblyVersion", parameters.VersionInfo.AssemblyVersion)
+                        .WithProperty("FileVersion", parameters.VersionInfo.AssemblyFileVersion);
+                        //.WithProperty("PackageReleaseNotes", string.Concat("\"", releaseNotes, "\""));
+
+    // See https://github.com/dotnet/sdk/issues/335#issuecomment-346951034
+    if (false == parameters.IsRunningOnWindows)
+    {
+        // Since Cake runs on Mono, it is straight forward to resolve the path to the Mono libs (reference assemblies).
+        // Find where .../mono/5.2/mscorlib.dll is on your machine.
+        var frameworkPathOverride = new FilePath(typeof(object).Assembly.Location).GetDirectory().FullPath + "/";
+
+        // Use FrameworkPathOverride when not running on Windows. MSBuild uses
+        // this property to locate the Framework libraries required to build your code.
+        Information("Build will use FrameworkPathOverride={0} since not building on Windows.", frameworkPathOverride);
+        msBuildSettings.WithProperty("FrameworkPathOverride", frameworkPathOverride);
     }
 
     Information("Building version {0} of {1} ({2}, {3}) using version {4} of Cake. (IsTagPush: {5})",
@@ -80,115 +103,57 @@ Task("Clean")
 Task("Restore")
     .Does(() =>
 {
-    DotNetCoreRestore("./", new DotNetCoreRestoreSettings
+    DotNetCoreRestore(parameters.Paths.Files.Solution.FullPath, new DotNetCoreRestoreSettings
     {
-        Verbose = false,
-        Verbosity = DotNetCoreRestoreVerbosity.Minimal
+        Verbosity = DotNetCoreVerbosity.Minimal,
+        ConfigFile = "./NuGet.config",
+        MSBuildSettings = msBuildSettings
     });
 });
 
-// TODO: Move to Lofus
-Task("Restore2")
-    .Does(() =>
-{
-    Information("Restoring packages for {0}...", parameters.Paths.Files.Solution);
-    NuGetRestore(parameters.Paths.Files.Solution, new NuGetRestoreSettings { ConfigFile = "./nuget.config" });
-    Information("Package restore was successful!");
-});
-
 Task("Build")
-    .IsDependentOn("Patch-Project-Json")
     .IsDependentOn("Generate-CommonAssemblyInfo")
     .IsDependentOn("Restore")
     .Does(() =>
 {
-    foreach (var project in GetFiles("./**/project.json"))
+    DotNetCoreBuild(parameters.Paths.Files.Solution.FullPath, new DotNetCoreBuildSettings()
     {
-        DotNetCoreBuild(project.GetDirectory().FullPath, new DotNetCoreBuildSettings {
-            VersionSuffix = parameters.VersionInfo.VersionSuffix,
-            Configuration = parameters.Configuration
-        });
-    }
-});
-
-// TODO: Move to Lofus
-Task("Build2")
-    .IsDependentOn("Generate-CommonAssemblyInfo2")
-    .IsDependentOn("Restore2")
-    .Does(() =>
-{
-    Information("Building {0}", parameters.Paths.Files.Solution);
-
-    MSBuild(parameters.Paths.Files.Solution, settings =>
-        settings.SetPlatformTarget(PlatformTarget.MSIL) // AnyCPU
-            .WithProperty("TreatWarningsAsErrors", "true")
-            .WithProperty("nowarn", @"""1591,1573""") // Missing XML comment for publicly visible type or member, Parameter 'parameter' has no matching param tag in the XML comment
-            .WithTarget("Clean")
-            .WithTarget("Build")
-            .SetConfiguration(parameters.Configuration)
-            .SetVerbosity(Verbosity.Minimal)
-    );
+        Configuration = parameters.Configuration,
+        NoRestore = true,
+        MSBuildSettings = msBuildSettings
+    });
 });
 
 Task("Test")
     .IsDependentOn("Build")
     .Does(() =>
 {
-    foreach (var testProject in GetFiles(string.Format("{0}/**/project.json", parameters.Paths.Directories.Test)))
+    var testProjects = GetFiles($"./{parameters.Paths.Directories.Test}/**/*.csproj");
+    foreach(var project in testProjects)
     {
-        if (IsRunningOnWindows())
+        // This takes time...maybe only run tests on a single runtime when developing
+        // What TFM should we use for desktop? it doesn't matter net452 and net472 cannot be installed side-by-side
+        // What TFM should we use for core? 2.0 or 2.1...both or newest...2.1 should be sufficient
+        foreach (var tfm in new [] {"net472", "netcoreapp2.1"})
         {
-            DotNetCoreTest(testProject.GetDirectory().FullPath, new DotNetCoreTestSettings {
-                Configuration = parameters.Configuration,
-                NoBuild = true,
-                Verbose = false
-            });
-        }
-        else
-        {
-            // Ideally we would use the 'dotnet test' command to test both netcoreapp1.0 (CoreCLR)
-            // and net452 (Mono), but this currently doesn't work due to
-            //    https://github.com/dotnet/cli/issues/3073
-
-            //
-            // .NET Core (on Linux and OS X)
-            //
-
-            DotNetCoreTest(testProject.GetDirectory().FullPath, new DotNetCoreTestSettings {
-                Configuration = parameters.Configuration,
-                Framework = "netcoreapp1.0",
-                NoBuild = true,
-                Verbose = false
-            });
-
-            //
-            // Mono (on Linux and OS X)
-            //
-
-            var testProjectPath = testProject.GetDirectory().FullPath;
-            var testProjectName = testProject.GetDirectory().GetDirectoryName();
-
-            var xunitRunner = GetFiles(testProjectPath + "/bin/" + parameters.Configuration + "/net452/*/dotnet-test-xunit.exe").First().FullPath;
-            var testAssembly = GetFiles(testProjectPath + "/bin/" + parameters.Configuration + "/net452/*/" + testProjectName + ".dll").First().FullPath;
-
-            int exitCode = Run("mono", xunitRunner + " " + testAssembly);
-            if (exitCode != 0)
+            DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
             {
-                throw new Exception("Tests in '" + testProjectName + "' failed on Mono!");
-            }
-
+                Framework = tfm,
+                NoBuild = true,
+                NoRestore = true,
+                Configuration = parameters.Configuration
+            });
         }
-    }
-});
 
-// TODO: Move to Lofus
-Task("Test2")
-    .IsDependentOn("Build2")
-    .Does(() =>
-{
-    var testAssemblies = parameters.GetBuildArtifacts("Brf.Lofus.Core.Tests", "Brf.Lofus.Integration.Tests", "Brf.Lofus.ProductSpecs");
-    Information("Running tests for {0}", string.Join(", ", testAssemblies));
-    XUnit2(testAssemblies);
+        // NOTE: .NET Framework / Mono (net472 on *nix and Mac OSX)
+        // ========================================================
+        // Microsoft does not officially support Mono via .NET Core SDK. Their support for .NET Core
+        // on Linux and OS X starts and ends with .NET Core. Anyway we test on Mono for now, and maybe
+        // remove Mono support soon.
+        //
+        // For Mono to support dotnet-xunit we have to put { "appDomain": "denied" } in config
+        // See https://github.com/xunit/xunit/issues/1357#issuecomment-314416426
+    }
 });
 
 Task("Package")
@@ -196,14 +161,16 @@ Task("Package")
     .IsDependentOn("Test")
     .Does(() =>
 {
-    foreach (var project in GetFiles(string.Format("{0}/**/project.json", parameters.Paths.Directories.Src)))
+    // Only packable projects will produce nupkg's
+    var projects = GetFiles($"{parameters.Paths.Directories.Src}/**/*.csproj");
+    foreach(var project in projects)
     {
-        DotNetCorePack(project.GetDirectory().FullPath, new DotNetCorePackSettings {
-            VersionSuffix = parameters.VersionInfo.VersionSuffix,
+        DotNetCorePack(project.FullPath, new DotNetCorePackSettings {
             Configuration = parameters.Configuration,
             OutputDirectory = parameters.Paths.Directories.Artifacts,
             NoBuild = true,
-            Verbose = false
+            NoRestore = true,
+            MSBuildSettings = msBuildSettings
         });
     }
 });
@@ -228,7 +195,6 @@ Task("Upload-AppVeyor-Debug-Artifacts")
     .WithCriteria(() => parameters.Git.IsDevelopmentLineBranch && parameters.ConfigurationIsDebug)
     .Does(() =>
 {
-    // TODO: Both NAME.nupkg and NAME.symbols.nupkg?
     foreach (var package in GetFiles(parameters.Paths.Directories.Artifacts + "/*.nupkg"))
     {
         // appveyor PushArtifact <path> [options] (See https://www.appveyor.com/docs/build-worker-api/#push-artifact)
@@ -242,7 +208,6 @@ Task("Upload-AppVeyor-Release-Artifacts")
     .WithCriteria(() => parameters.Git.IsReleaseLineBranch && parameters.ConfigurationIsRelease)
     .Does(() =>
 {
-    // TODO: Both NAME.nupkg and NAME.symbols.nupkg?
     foreach (var package in GetFiles(parameters.Paths.Directories.Artifacts + "/*.nupkg"))
     {
         // appveyor PushArtifact <path> [options] (See https://www.appveyor.com/docs/build-worker-api/#push-artifact)
@@ -250,7 +215,7 @@ Task("Upload-AppVeyor-Release-Artifacts")
     }
 });
 
-// Debug builds are published to MyGet CI feed
+// Debug builds are published to CI feed
 Task("Publish-CIFeed-MyGet")
     .IsDependentOn("Package")
     .WithCriteria(() => parameters.ConfigurationIsDebug)
@@ -276,7 +241,7 @@ Task("Publish-CIFeed-MyGet")
     publishingError = true;
 });
 
-// Release builds are published to NuGet.Org production feed
+// Release builds are published to production feed
 Task("Publish-ProdFeed-NuGet")
     .IsDependentOn("Package")
     .WithCriteria(() => parameters.ConfigurationIsRelease)
@@ -313,7 +278,7 @@ Task("Create-Release-Notes")
     string milestone = Environment.GetEnvironmentVariable("GitHubMilestone") ??
                        parameters.VersionInfo.Milestone;
     Information("Creating draft release of version '{0}' on GitHub", milestone);
-    GitReleaseManagerCreate(parameters.GitHub.UserName, parameters.GitHub.Password,
+    GitReleaseManagerCreate(parameters.GitHub.GetRequiredToken(),
                             parameters.GitHub.RepositoryOwner, parameters.GitHub.RepositoryName,
         new GitReleaseManagerCreateSettings
         {
@@ -330,17 +295,15 @@ Task("Publish-GitHub-Release")
     .WithCriteria(() => parameters.ConfigurationIsRelease)
     .Does(() =>
 {
-    // TODO: Both NAME.nupkg and NAME.symbols.nupkg?
     foreach (var package in GetFiles(parameters.Paths.Directories.Artifacts + "/*.nupkg"))
     {
-        GitReleaseManagerAddAssets(parameters.GitHub.UserName, parameters.GitHub.Password,
+        GitReleaseManagerAddAssets(parameters.GitHub.GetRequiredToken(),
                                    parameters.GitHub.RepositoryOwner, parameters.GitHub.RepositoryName,
                                    parameters.VersionInfo.Milestone, package.FullPath);
-
     }
 
     // Close the milestone
-    GitReleaseManagerClose(parameters.GitHub.UserName, parameters.GitHub.Password,
+    GitReleaseManagerClose(parameters.GitHub.GetRequiredToken(),
                            parameters.GitHub.RepositoryOwner, parameters.GitHub.RepositoryName,
                            parameters.VersionInfo.Milestone);
 })
@@ -353,10 +316,7 @@ Task("Publish-GitHub-Release")
 Task("Clear-Artifacts")
     .Does(() =>
 {
-    if (DirectoryExists(parameters.Paths.Directories.Artifacts))
-    {
-        DeleteDirectory(parameters.Paths.Directories.Artifacts, true);
-    }
+    parameters.ClearArtifacts();
 });
 
 Task("Show-Info")
@@ -372,37 +332,6 @@ Task("Print-AppVeyor-Environment-Variables")
     parameters.PrintAppVeyorEnvironmentVariables();
 });
 
-
-Task("Patch-Project-Json")
-    .Does(() =>
-{
-    // Only production code is patched
-    var projects = GetFiles("./src/**/project.json");
-
-    foreach (var project in projects)
-    {
-        Information("Patching project.json in '{0}' to have version equal to {1}",
-            project.GetDirectory().GetDirectoryName(),
-            parameters.VersionInfo.NuGetVersion);
-
-        // Reads the current version without the '-*' suffix
-        string currVersion = ProjectJsonUtil.ReadProjectJsonVersion(project.FullPath);
-
-        Information("The version in the project.json is {0}", currVersion);
-
-        // Only patch project.json files if the major.minor.patch versions do not match
-        if (parameters.VersionInfo.MajorMinorPatch != currVersion) {
-
-            Information("Patching version to {0}", parameters.VersionInfo.PatchedVersion);
-
-            if (!ProjectJsonUtil.PatchProjectJsonVersion(project, parameters.VersionInfo.PatchedVersion))
-            {
-                Warning("No version specified in {0}.", project.FullPath);
-            }
-        }
-    }
-});
-
 Task("Generate-CommonAssemblyInfo")
     .Does(() =>
 {
@@ -414,6 +343,8 @@ Task("Generate-CommonAssemblyInfo")
 //     This code was generated by a Cake.
 // </auto-generated>
 //------------------------------------------------------------------------------
+
+[assembly: System.CLSCompliant(true)]
 
 [assembly: AssemblyProduct(""Maxfire.Prelude"")]
 [assembly: AssemblyVersion(""{0}"")]
@@ -434,52 +365,6 @@ Task("Generate-CommonAssemblyInfo")
 
     // Generate ./src/CommonAssemblyInfo.cs that is ignored by GIT
     System.IO.File.WriteAllText(parameters.Paths.Files.CommonAssemblyInfo.FullPath, content, Encoding.UTF8);
-});
-
-Task("Generate-CommonAssemblyInfo2")
-	.Description("Patches the AssemblyInfo files.")
-	.IsDependentOn("Clean")
-	.Does(() =>
-{
-	// Generate ./src/CommonAssemblyInfo.cs that is ignored by GIT
-    CreateAssemblyInfo(parameters.Paths.Files.CommonAssemblyInfo.FullPath, new AssemblyInfoSettings {
-		Product = "Maxfire.Prelude",
-		Version = parameters.VersionInfo.AssemblyVersion,
-		FileVersion = parameters.VersionInfo.AssemblyFileVersion,
-		InformationalVersion = parameters.VersionInfo.AssemblyInformationalVersion,
-		Copyright = "Copyright (c) Morten Maxild."
-	});
-});
-
-Task("Clear-PackageCache")
-    .Does(() =>
-{
-    Information("Clearing NuGet package caches...");
-
-    // NuGet restore with single source (nuget.org v3 feed) reports
-    //    Feeds used:
-    //        %LOCALAPPDATA%\NuGet\Cache          (packages-cache)
-    //        C:\Users\Maxfire\.nuget\packages\   (global-packages)
-    //        https://api.nuget.org/v3/index.json (only configured feed)
-
-    var nugetCaches = new Dictionary<string, bool>
-    {
-        {"http-cache", false},      // %LOCALAPPDATA%\NuGet\v3-cache
-        {"packages-cache", true},   // %LOCALAPPDATA%\NuGet\Cache
-        {"global-packages", true},  // ~\.nuget\packages\
-        {"temp", false},            // %LOCALAPPDATA%\Temp\NuGetScratch
-    };
-
-    var nuget = parameters.Paths.Tools.NuGet.FullPath;
-
-    foreach (var cache in nugetCaches.Where(kvp => kvp.Value).Select(kvp => kvp.Key))
-    {
-        Information("Clearing nuget resources in {0}.", cache);
-        int exitCode = Run(nuget, string.Format("locals {0} -clear -verbosity detailed", cache));
-        FailureHelper.ExceptionOnError(exitCode, string.Format("Failed to clear nuget {0}.", cache));
-    }
-
-    Information("NuGet package cache clearing was succesful!");
 });
 
 ///////////////////////////////////////////////////////////////////////////////
