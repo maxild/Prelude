@@ -3,8 +3,7 @@
     <Import Project="..\Directory.Build.props" />
 
     <PropertyGroup>
-        <!-- Drop net452 when all consumers run on net472 -->
-        <TargetFrameworks>netstandard2.0;net452</TargetFrameworks>
+        <TargetFrameworks>netstandard2.0</TargetFrameworks>
         <IsTestProject>false</IsTestProject>
         <IsPackable>true</IsPackable>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -52,7 +51,7 @@
                 <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
             </PropertyGroup>
             <ItemGroup>
-                <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta-62925-02" PrivateAssets="All" />
+                <PackageReference Include="Microsoft.SourceLink.GitHub" Version="$(MicrosoftSourceLinkGitHubPackageVersion)" PrivateAssets="All" />
             </ItemGroup>
         </When>
     </Choose>

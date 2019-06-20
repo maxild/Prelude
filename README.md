@@ -1,6 +1,8 @@
 # Prelude
 
-The Prelude repository contains extensions to the .NET Framework 4.5.x BCL and .NET Core 1.0.x BCL used by several projects written by Morten Maxild.
+The Prelude repository contains extensions to the .NET Framework 4.5.2+ and .NET Core 2.x (`netstandard2.0`) used by several projects written by Morten Maxild.
+
+The Prelude packages (libraries) are build with SourceLink support.
 
 AppVeyor: [![Build Status](https://ci.appveyor.com/api/projects/status/kkcqonha77p6dj2l?svg=true)](https://ci.appveyor.com/project/maxild/prelude)
 
