@@ -10,11 +10,14 @@ insert_final_newline = true
 charset = utf-8
 indent_style = space
 indent_size = 4
+trim_trailing_whitespace = true
 
-# YAML looks best with 2 spaces
-[*.{yml,yaml}]
+[*.{yml, yaml}]
 indent_size = 2
 
-# Bash cannot handle CRLF line endings
-[*.sh]
-end_of_line = cr
+[*.{sh, config, nix}]
+end_of_line = lf
+indent_size = 2
+
+[{.envrc,.editorconfig}]
+end_of_line = lf

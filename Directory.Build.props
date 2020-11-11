@@ -5,12 +5,12 @@
     <!-- Compiler properties -->
     <PropertyGroup>
         <OutputType>Library</OutputType>
-        <LangVersion>7.3</LangVersion>
+        <LangVersion>8.0</LangVersion>
         <NoWarn>$(NoWarn);CS1591</NoWarn>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     </PropertyGroup>
 
-        <!-- AssemblyInfo properties -->
+    <!-- AssemblyInfo properties -->
     <PropertyGroup>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     </PropertyGroup>
@@ -34,11 +34,13 @@
         <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
         <DebugType>portable</DebugType>
     </PropertyGroup>
-
-    <!-- TODO: Maybe remove this -->
-    <PropertyGroup>
-        <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netcoreapp2.0' ">2.0.0</NetStandardImplicitPackageVersion>
-        <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">2.1.0</NetStandardImplicitPackageVersion>
+    <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.0' ">
+        <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
+        <DebugType>portable</DebugType>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
+        <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
+        <DebugType>portable</DebugType>
     </PropertyGroup>
 
 </Project>
