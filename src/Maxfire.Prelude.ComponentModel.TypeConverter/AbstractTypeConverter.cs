@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Maxfire.Prelude.ComponentModel
 {
@@ -11,18 +12,17 @@ namespace Maxfire.Prelude.ComponentModel
     {
         public override bool CanConvertFrom(ITypeDescriptorContext context, Type sourceType)
         {
-            return (sourceType == typeof(string) || base.CanConvertFrom(context, sourceType));
+            return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
         }
 
         public override bool CanConvertTo(ITypeDescriptorContext context, Type destinationType)
         {
-            return (destinationType == typeof(string) || base.CanConvertTo(context, destinationType));
+            return destinationType == typeof(string) || base.CanConvertTo(context, destinationType);
         }
 
         public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
         {
-            var s = value as string;
-            if (s != null)
+            if (value is string s)
             {
                 return Parse(s, culture);
             }
@@ -31,7 +31,7 @@ namespace Maxfire.Prelude.ComponentModel
 
         public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
         {
-            if (value == null)
+            if (value is null)
             {
                 throw new ArgumentNullException(nameof(value));
             }
@@ -46,8 +46,9 @@ namespace Maxfire.Prelude.ComponentModel
             return base.ConvertTo(context, culture, value, destinationType);
         }
 
+        [return: NotNull]
         protected abstract T Parse(string s, CultureInfo culture);
 
-        protected abstract string Stringify(T value, CultureInfo culture);
+        protected abstract string Stringify([NotNull] T value, CultureInfo culture);
     }
 }
