@@ -4,8 +4,8 @@ using Shouldly;
 
 namespace Maxfire.Prelude.Tests
 {
-	public class EnumerationTests
-	{
+    public class EnumerationTests
+    {
         public class FooBarEnumeration : Enumeration<FooBarEnumeration>
         {
             public static readonly FooBarEnumeration Foo = new FooBarEnumeration(1, "Foo", "Foo");
@@ -89,22 +89,33 @@ namespace Maxfire.Prelude.Tests
         {
             FooBarEnumeration.Foo.ShouldBe(FooBarEnumeration.Foo);
             FooBarEnumeration.Foo.ShouldNotBe(FooBarEnumeration.Bar);
-            // equality by null
-            FooBarEnumeration.Foo.Equals(null).ShouldBeFalse();
-            FooBarEnumeration.Foo.Equals((object)null).ShouldBeFalse();
+
             // equality by type
-// ReSharper disable once SuspiciousTypeConversion.Global
+            // ReSharper disable once SuspiciousTypeConversion.Global
             FooBarEnumeration.Foo.Equals(AnotherFooBarEnumeration.Foo).ShouldBeFalse();
             FooBarEnumeration.Foo.Equals(new object()).ShouldBeFalse();
+
             // equality by value
             AnotherFooBarEnumeration.Foo.ShouldBe(new AnotherFooBarEnumeration(1, "Rubbish"));
             AnotherFooBarEnumeration.Foo.ShouldNotBe(new AnotherFooBarEnumeration(10, "Foo"));
         }
 
         [Fact]
+        public void EqualToNullIsFalse()
+        {
+            FooBarEnumeration.Foo.Equals(null).ShouldBeFalse();
+        }
+
+        [Fact]
+        public void EqualToNullIsFalse2()
+        {
+            FooBarEnumeration.Foo.Equals((object?) null).ShouldBeFalse();
+        }
+
+        [Fact]
         public void Comparison()
         {
-            FooBarEnumeration.Foo.ShouldBeGreaterThan(null);
+            FooBarEnumeration.Foo.CompareTo(null).ShouldBeGreaterThan(0); // null compares less anything (by convention)
             FooBarEnumeration.Foo.ShouldBeLessThan(FooBarEnumeration.Bar);
             FooBarEnumeration.Foo.ShouldBeLessThanOrEqualTo(FooBarEnumeration.Bar);
             FooBarEnumeration.Foo.ShouldBeLessThanOrEqualTo(FooBarEnumeration.Foo);
