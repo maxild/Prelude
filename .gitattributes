@@ -4,14 +4,16 @@
 # Custom for Visual Studio
 *.cs       text diff=csharp eol=crlf
 *.sln      text merge=union eol=crlf
+*.sln.DotSettings           eol=crlf
 *.csproj   text merge=union eol=crlf
-*.vbproj   text merge=union
-*.fsproj   text merge=union
-*.dbproj   text merge=union
+*.vbproj   text merge=union eol=crlf
+*.fsproj   text merge=union eol=crlf
+*.dbproj   text merge=union eol=crlf
 *.ascx     text eol=crlf
 *.xaml     text eol=crlf
 *.cmd      text eol=crlf
 *.ps1      text eol=crlf
+*.psm1     text eol=crlf
 *.coffee   text eol=crlf
 *.config   text eol=crlf
 *.css      text eol=crlf
@@ -39,6 +41,9 @@
 *.ico binary
 *.jpg binary
 *.png binary
+
+packages.config text eol=crlf merge=union
+tools/nuget.exe binary
 
 # Standard to msysgit
 *.doc diff=astextplain

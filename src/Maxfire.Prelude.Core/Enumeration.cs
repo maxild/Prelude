@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -11,11 +12,7 @@ namespace Maxfire.Prelude
     [Serializable]
     public abstract class Enumeration
     {
-        protected Enumeration(int value, string name) : this(value, name, name)
-        {
-        }
-
-        protected Enumeration(int value, string name, string text)
+        protected Enumeration(int value, string name, string? text = null)
         {
             if (string.IsNullOrEmpty(name))
             {
@@ -48,7 +45,7 @@ namespace Maxfire.Prelude
 
         public static IEnumerable<Enumeration> GetAll(Type enumerationType)
         {
-            if (enumerationType == null)
+            if (enumerationType is null)
             {
                 throw new ArgumentNullException(nameof(enumerationType));
             }
@@ -56,48 +53,44 @@ namespace Maxfire.Prelude
             return func();
         }
 
-        private static readonly ReaderWriterLockSlim LOCK = new ReaderWriterLockSlim();
+        private static readonly ReaderWriterLockSlim s_lock = new ReaderWriterLockSlim();
 
-        private static readonly IDictionary<Type, Func<IEnumerable<Enumeration>>> CACHED_FUNCS =
+        private static readonly IDictionary<Type, Func<IEnumerable<Enumeration>>> s_cachedFuncs =
             new Dictionary<Type, Func<IEnumerable<Enumeration>>>();
 
-        private static Func<IEnumerable<Enumeration>> ReadFunc(Type enumerationType)
+        private static Func<IEnumerable<Enumeration>>? ReadFunc(Type enumerationType)
         {
-            LOCK.EnterReadLock();
+            s_lock.EnterReadLock();
             try
             {
-                Func<IEnumerable<Enumeration>> func;
-                if (CACHED_FUNCS.TryGetValue(enumerationType, out func))
-                {
-                    return func;
-                }
-                return null;
+                return s_cachedFuncs.TryGetValue(enumerationType, out var func) ? func : null;
             }
             finally
             {
-                LOCK.ExitReadLock();
+                s_lock.ExitReadLock();
             }
         }
 
         private static Func<IEnumerable<Enumeration>> WriteFunc(Type enumerationType)
         {
-            LOCK.EnterWriteLock();
+            s_lock.EnterWriteLock();
             try
             {
                 var func = GetFunc(enumerationType);
-                CACHED_FUNCS.Add(enumerationType, func);
+                s_cachedFuncs.Add(enumerationType, func);
                 return func;
             }
             finally
             {
-                LOCK.ExitWriteLock();
+                s_lock.ExitWriteLock();
             }
         }
 
         static Func<IEnumerable<Enumeration>> GetFunc(Type enumerationType)
         {
             // Call Enumeration.GetAll<TEnumeration> via runtime type reference using Expession API as a mini-compiler
-            MethodInfo method = typeof(Enumeration).GetRuntimeMethod("GetAll", Type.EmptyTypes);
+            MethodInfo? method = typeof(Enumeration).GetRuntimeMethod(nameof(GetAll), Type.EmptyTypes);
+            Debug.Assert(!(method is null));
             MethodInfo genericMethod = method.MakeGenericMethod(enumerationType);
             MethodCallExpression body = Expression.Call(genericMethod, Enumerable.Empty<Expression>());
             Expression<Func<IEnumerable<Enumeration>>> lambda = Expression.Lambda<Func<IEnumerable<Enumeration>>>(body);
@@ -105,24 +98,24 @@ namespace Maxfire.Prelude
             return func;
         }
 
-        public static TEnumeration FromValueOrDefault<TEnumeration>(int value)
+        public static TEnumeration? FromValueOrDefault<TEnumeration>(int value)
             where TEnumeration : Enumeration<TEnumeration>
         {
-            TEnumeration matchingItem = GetAll<TEnumeration>().FirstOrDefault(item => item.Value == value);
+            var matchingItem = GetAll<TEnumeration>().FirstOrDefault(item => item.Value == value);
             return matchingItem;
         }
 
-        public static Enumeration FromValueOrDefault(Type enumerationType, int value)
+        public static Enumeration? FromValueOrDefault(Type enumerationType, int value)
         {
-            Enumeration matchingItem = GetAll(enumerationType).FirstOrDefault(item => item.Value == value);
+            var matchingItem = GetAll(enumerationType).FirstOrDefault(item => item.Value == value);
             return matchingItem;
         }
 
         public static TEnumeration FromValue<TEnumeration>(int value)
             where TEnumeration : Enumeration<TEnumeration>
         {
-            TEnumeration matchingItem = FromValueOrDefault<TEnumeration>(value);
-            if (matchingItem == null)
+            var matchingItem = FromValueOrDefault<TEnumeration>(value);
+            if (matchingItem is null)
             {
                 throw new ArgumentException($"'{value}' is not a valid value for '{typeof(TEnumeration)}'.");
             }
@@ -131,25 +124,25 @@ namespace Maxfire.Prelude
 
         public static Enumeration FromValue(Type enumerationType, int value)
         {
-            Enumeration matchingItem = FromValueOrDefault(enumerationType, value);
-            if (matchingItem == null)
+            var matchingItem = FromValueOrDefault(enumerationType, value);
+            if (matchingItem is null)
             {
                 throw new ArgumentException($"'{value}' is not a valid value for '{enumerationType}'.");
             }
             return matchingItem;
         }
 
-        public static TEnumeration FromNameOrDefault<TEnumeration>(string name)
+        public static TEnumeration? FromNameOrDefault<TEnumeration>(string name)
             where TEnumeration : Enumeration<TEnumeration>
         {
-            TEnumeration matchingItem = GetAll<TEnumeration>()
+            var matchingItem = GetAll<TEnumeration>()
                 .FirstOrDefault(item => item.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
             return matchingItem;
         }
 
-        public static Enumeration FromNameOrDefault(Type enumerationType, string name)
+        public static Enumeration? FromNameOrDefault(Type enumerationType, string name)
         {
-            Enumeration matchingItem = GetAll(enumerationType)
+            var matchingItem = GetAll(enumerationType)
                 .FirstOrDefault(item => item.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
             return matchingItem;
         }
@@ -157,8 +150,8 @@ namespace Maxfire.Prelude
         public static TEnumeration FromName<TEnumeration>(string name)
             where TEnumeration : Enumeration<TEnumeration>
         {
-            TEnumeration matchingItem = FromNameOrDefault<TEnumeration>(name);
-            if (matchingItem == null)
+            var matchingItem = FromNameOrDefault<TEnumeration>(name);
+            if (matchingItem is null)
             {
                 throw new ArgumentException($"'{name}' is not a valid name for '{typeof(TEnumeration)}'.");
             }
@@ -167,8 +160,8 @@ namespace Maxfire.Prelude
 
         public static Enumeration FromName(Type enumerationType, string name)
         {
-            Enumeration matchingItem = FromNameOrDefault(enumerationType, name);
-            if (matchingItem == null)
+            var matchingItem = FromNameOrDefault(enumerationType, name);
+            if (matchingItem is null)
             {
                 throw new ArgumentException($"'{name}' is not a valid name for '{enumerationType}'.");
             }
@@ -184,10 +177,10 @@ namespace Maxfire.Prelude
 
         // Cached fields are lazy evaluated to give static fields a chance to initialize
 
-        private static readonly Lazy<TEnumeration[]> CACHED_FIELDS =
+        private static readonly Lazy<TEnumeration[]> s_cachedFields =
             new Lazy<TEnumeration[]>(GetFields, LazyThreadSafetyMode.ExecutionAndPublication);
 
-        static TEnumeration[] GetFields()
+        private static TEnumeration[] GetFields()
         {
             // get all the public, static, declared fields using the reflection api
             return typeof(TEnumeration)
@@ -201,7 +194,7 @@ namespace Maxfire.Prelude
 
         internal static TEnumeration[] GetCachedFields()
         {
-            return CACHED_FIELDS.Value;
+            return s_cachedFields.Value;
         }
 
         #endregion
@@ -210,13 +203,13 @@ namespace Maxfire.Prelude
         {
         }
 
-        protected Enumeration(int value, string name, string text) : base(value, name, text)
-		{
-		}
-
-        public int CompareTo(object obj)
+        protected Enumeration(int value, string name, string? text) : base(value, name, text)
         {
-            if (obj == null)
+        }
+
+        public int CompareTo(object? obj)
+        {
+            if (obj is null)
             {
                 return 1;
             }
@@ -227,70 +220,61 @@ namespace Maxfire.Prelude
             return Value.CompareTo(((TEnumeration)obj).Value);
         }
 
-        public int CompareTo(TEnumeration other)
+        public int CompareTo(TEnumeration? other)
         {
-            if (other == null)
+            if (other is null)
             {
                 return 1;
             }
             // even here we test for type equality, because the derived classes can (in theory) be based on deep inheritance chains
             if (GetType() != other.GetType())
             {
-                throw new ArgumentException($"The value {other.GetType().Name}.{other} cannot be compared to this {GetType()}{Name} value, because the enumeration types are not the same.");
+                throw new ArgumentException(
+                    $"The value {other.GetType().Name}.{other} cannot be compared to this {GetType()}{Name} value, because the enumeration types are not the same.");
             }
             return Value.CompareTo(other.Value);
         }
 
-        public override bool Equals(object obj)
-		{
-		    return obj != null && GetType() == obj.GetType() && Value == ((TEnumeration) obj).Value;
-		}
-
-        public virtual bool Equals(TEnumeration other)
+        public override bool Equals(object? obj)
         {
-            // even here we test for type equality, because the derived classes can (in theory) be based on deep inheritance chains
-            return other != null && GetType() == other.GetType() && Value == other.Value;
+            return !(obj is null) && GetType() == obj.GetType() && Value == ((TEnumeration) obj).Value;
         }
 
-		public override int GetHashCode()
-		{
-			return Value;
-		}
-
-		public override string ToString()
-		{
-			return Name;
-		}
-
-		public string ToString(string format, IFormatProvider formatProvider)
+        public virtual bool Equals(TEnumeration? other)
         {
-            if (formatProvider != null)
+            // even here we test for type equality, because the derived classes can (in theory) be based on deep inheritance chains
+            return !(other is null) && GetType() == other.GetType() && Value == other.Value;
+        }
+
+        public override int GetHashCode()
+        {
+            return Value;
+        }
+
+        public override string ToString()
+        {
+            return Name;
+        }
+
+        public string ToString(string? format, IFormatProvider? formatProvider)
+        {
+            if (formatProvider?.GetFormat(GetType()) is ICustomFormatter fmt)
             {
-                var fmt = formatProvider.GetFormat(GetType()) as ICustomFormatter;
-                if (fmt != null)
-                {
-                    return fmt.Format(format, this, formatProvider);
-                }
+                return fmt.Format(format, this, formatProvider);
             }
 
-            string formatToUse = (format ?? "G").ToUpperInvariant();
+            var formatToUse = (format ?? "G").ToUpperInvariant();
 
             return ToStringHelper(formatToUse);
         }
 
-        protected virtual string ToStringHelper(string format)
-        {
-            switch (format)
+        protected virtual string ToStringHelper(string format) =>
+            format switch
             {
-                case "V":
-                    return Value.ToString(CultureInfo.InvariantCulture);
-                case "T":
-                    return Text;
-                case "G":
-                    return ToString();
-                default:
-                    throw new FormatException($"Unsupported format '{format}'");
-            }
-        }
+                "V" => Value.ToString(CultureInfo.InvariantCulture),
+                "T" => Text,
+                "G" => ToString(),
+                _ => throw new FormatException($"Unsupported format '{format}'")
+            };
     }
 }

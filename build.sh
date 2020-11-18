@@ -1,157 +1,148 @@
 #!/usr/bin/env bash
 
-##########################################################################
-# This is the Cake bootstrapper script for Linux and OS X.
-# This file was downloaded from https://github.com/cake-build/resources
-# Feel free to change this file to fit your needs.
-##########################################################################
-
-# Define directories.
 SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-DOTNET_DIR="$SCRIPT_DIR/.dotnet"
 TOOLS_DIR="$SCRIPT_DIR/tools"
-NUGET_EXE="$TOOLS_DIR/nuget.exe"
-CAKE_EXE="$TOOLS_DIR/Cake/Cake.exe"
-PACKAGES_CONFIG="$TOOLS_DIR/packages.config"
-PACKAGES_CONFIG_MD5="$TOOLS_DIR/packages.config.md5sum"
-
-# .NET Core SDK version (with 2.x release/runtime)
-DOTNET_SDK_VERSION="2.1.500" # TODO: How to specify latest 2.1.x release (Current)?
-# .NET Core Runtime version (older release/runtime to install)
-DOTNET_RUNTIME_VERSION="" # TODO: How to specify latest 1.1.x release (LTS)?
-
-# Define md5sum or md5 depending on Linux/OSX
-MD5_EXE=
-if [[ "$(uname -s)" == "Darwin" ]]; then
-    MD5_EXE="md5 -r"
-else
-    MD5_EXE="md5sum"
-fi
-
-# Define default arguments.
-SCRIPT="build.cake"
-TARGET="Default"
-CONFIGURATION="Release"
-VERBOSITY="verbose"
-DRYRUN=
-NUGET_VERSION="latest"
-CAKESCRIPTS_VERSION="latest"
-SHOW_VERSION=false
-SCRIPT_ARGUMENTS=()
-
-# Parse arguments.
-for i in "$@"; do
-    case $1 in
-        -s|--script) SCRIPT="$2"; shift ;;
-        -t|--target) TARGET="$2"; shift ;;
-        -c|--configuration) CONFIGURATION="$2"; shift ;;
-        -v|--verbosity) VERBOSITY="$2"; shift ;;
-        --nugetVersion) NUGET_VERSION="$2"; shift ;;
-        --cakeScriptsVersion) CAKESCRIPTS_VERSION="$2"; shift ;;
-        -d|--dryrun) DRYRUN="--dryrun" ;;
-        --version) SHOW_VERSION=true ;;
-        --) shift; SCRIPT_ARGUMENTS+=("$@"); break ;;
-        *) SCRIPT_ARGUMENTS+=("$1") ;;
-    esac
-    shift
-done
-
-if [[ $NUGET_VERSION != "latest" ]] && [[ $NUGET_VERSION =~ ^v.* ]]; then
-    $NUGET_VERSION="v$NUGET_VERSION"
-fi
-
-NUGET_URL="https://dist.nuget.org/win-x86-commandline/$NUGET_VERSION/nuget.exe"
-
-# Make sure the tools folder exist.
 if [ ! -d "$TOOLS_DIR" ]; then
   mkdir "$TOOLS_DIR"
 fi
 
+# this one works inside command substititution, because it writes to stderr
+error_exit()
+{
+	echo "$1" 1>&2
+	exit 1
+}
+
 ###########################################################################
-# Install .NET Core CLI
+# LOAD versions from build.config
 ###########################################################################
 
-echo "Installing .NET Core SDK Binaries..."
-if [ ! -d "$SCRIPT_DIR/.dotnet" ]; then
-  mkdir "$SCRIPT_DIR/.dotnet"
+trim() {
+  local var="$*"
+  # remove leading whitespace characters
+  var="${var#"${var%%[![:space:]]*}"}"
+  # remove trailing whitespace characters
+  var="${var%"${var##*[![:space:]]}"}"
+  printf '%s' "$var"
+}
+
+source $SCRIPT_DIR/build.config
+# For some reason we have to remove whitespace
+DOTNET_VERSION=$(trim "$DOTNET_VERSION")
+CAKE_VERSION=$(trim "$CAKE_VERSION")
+CAKESCRIPTS_VERSION=$(trim "$CAKESCRIPTS_VERSION")
+GITVERSION_VERSION=$(trim "$GITVERSION_VERSION")
+GITRELEASEMANAGER_VERSION=$(trim "$GITRELEASEMANAGER_VERSION")
+
+if [[ ! "$DOTNET_VERSION" ]]; then
+    error_exit "Failed to parse .NET Core SDK version"
 fi
-curl -Lsfo "$DOTNET_DIR/dotnet-install.sh" https://dot.net/v1/dotnet-install.sh
-sudo chmod +x "$DOTNET_DIR/dotnet-install.sh"
-sudo bash "$DOTNET_DIR/dotnet-install.sh" --version "$DOTNET_SDK_VERSION" --install-dir "$DOTNET_DIR" --no-path
-if [[ ! -z  $DOTNET_RUNTIME_VERSION ]]; then
-  sudo bash "$DOTNET_DIR/dotnet-install.sh" --shared-runtime --version "$DOTNET_RUNTIME_VERSION" --install-dir "$DOTNET_DIR" --no-path
+if [[ ! "$CAKE_VERSION" ]]; then
+  error_exit "Failed to parse Cake version"
 fi
-export PATH="$DOTNET_DIR":$PATH
+if [[ ! "$CAKESCRIPTS_VERSION" ]]; then
+  error_exit "Failed to parse CakeScripts version"
+fi
+if [[ ! "$GITVERSION_VERSION" ]]; then
+  error_exit "Failed to parse GitVersion version"
+fi
+if [[ ! "$GITRELEASEMANAGER_VERSION" ]]; then
+  error_exit "Failed to parse GitReleaseManager version"
+fi
+
+###########################################################################
+# INSTALL .NET Core SDK
+###########################################################################
+
+DOTNET_CHANNEL='LTS'
+
 export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
-"$DOTNET_DIR/dotnet" --info
+export DOTNET_SYSTEM_NET_HTTP_USESOCKETSHTTPHANDLER=0
+export DOTNET_ROLL_FORWARD_ON_NO_CANDIDATE_FX=2
+
+DOTNET_INSTALLED_VERSION=$(dotnet --version)
+if [ $? -ne 0 ]; then
+  # Extract the first line of the message without making bash write any error messages
+  echo "$DOTNET_INSTALLED_VERSION" | head -1
+  echo "That is not problem, we will install the SDK version below."
+  DOTNET_INSTALLED_VERSION='' # Force installation of .NET Core SDK via dotnet-install script
+else
+  echo ".NET Core SDK version ${DOTNET_INSTALLED_VERSION} found."
+fi
+
+if [[ "$DOTNET_VERSION" != "$DOTNET_INSTALLED_VERSION" ]]; then
+  echo "Installing .NET Core SDK version ${DOTNET_VERSION} ..."
+  if [ ! -d "$SCRIPT_DIR/.dotnet" ]; then
+    mkdir "$SCRIPT_DIR/.dotnet"
+  fi
+  curl -Lsfo "$SCRIPT_DIR/.dotnet/dotnet-install.sh" https://dot.net/v1/dotnet-install.sh > /dev/null 2>&1
+  bash "$SCRIPT_DIR/.dotnet/dotnet-install.sh" --version $DOTNET_VERSION --channel $DOTNET_CHANNEL --install-dir .dotnet --no-path > /dev/null 2>&1
+  # Note: This PATH/DOTNET_ROOT will be visible only when sourcing script.
+  # Note: But on travis CI or other *nix build machines the PATH does not have
+  #       to be visible on the commandline after the build
+  export PATH="$SCRIPT_DIR/.dotnet:$PATH"
+  export DOTNET_ROOT="$SCRIPT_DIR/.dotnet"
+fi
 
 ###########################################################################
-# INSTALL NUGET
+# INSTALL .NET Core 3.x tools
 ###########################################################################
 
-# Download NuGet if it does not exist.
-if [ ! -f "$NUGET_EXE" ]; then
-    echo "Downloading NuGet ($NUGET_VERSION)..."
+function install_tool () {
+  local packageId=$1
+  local toolCommand=$2
+  local version=$3
 
-    curl -Lsfo "$NUGET_EXE" "$NUGET_URL"
-    if [ $? -ne 0 ]; then
-        echo "An error occured while downloading nuget.exe."
-        exit 1
+  local toolPath="$TOOLS_DIR/.store/${packageId}/${version}"
+  local exePath="$TOOLS_DIR/${toolCommand}"
+
+  if [ ! -d "$toolPath" ] || [ ! -f "$exePath" ]; then
+
+    if [ -f "$exePath" ]; then
+      dotnet tool uninstall --tool-path $TOOLS_DIR $packageId > /dev/null 2>&1
+      if [ $? -ne 0 ]; then
+        error_exit "Failed to uninstall ${packageId}"
+      fi
     fi
 
-    # TODO: Edit and Uncomment
-    #echo ($NUGET_EXE help | head -n 1)
-fi
+    dotnet tool install --tool-path $TOOLS_DIR --version $version --configfile NuGet.public.config $packageId > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+      error_exit "Failed to install ${packageId}"
+    fi
+
+  fi
+
+  # return value to be read via command substitution
+  echo $exePath
+}
+
+# We use lower cased package ids, because toLower is not defined in bash
+CAKE_EXE=$(install_tool 'cake.tool' 'dotnet-cake' $CAKE_VERSION)
+install_tool 'gitversion.tool' 'dotnet-gitversion' $GITVERSION_VERSION > /dev/null 2>&1
+install_tool 'gitreleasemanager.tool' 'dotnet-gitreleasemanager' $GITRELEASEMANAGER_VERSION > /dev/null 2>&1
 
 ###########################################################################
-# INSTALL CAKE
+# INSTALL CakeScripts
 ###########################################################################
 
-# Install/restore tools (i.e. Cake) using NuGet
-pushd "$TOOLS_DIR" >/dev/null
-
-# Check for changes in packages.config and remove installed tools if true.
-if [ ! -f $PACKAGES_CONFIG_MD5 ] || [ "$( cat $PACKAGES_CONFIG_MD5 | sed 's/\r$//' )" != "$( $MD5_EXE $PACKAGES_CONFIG | awk '{ print $1 }' )" ]; then
-    find . -type d ! -name . | xargs rm -rf
-fi
-
-mono "$NUGET_EXE" install $PACKAGES_CONFIG -ExcludeVersion
-if [ $? -ne 0 ]; then
-    echo "Could not restore NuGet packages."
-    exit 1
-fi
-
-# save packages.config hash to disk
-$MD5_EXE $PACKAGES_CONFIG | awk '{ print $1 }' >| $PACKAGES_CONFIG_MD5
-
-# Install re-usable cake scripts
-# Note: We cannot put the package reference into ./tools/packages.json, because this file does not support floating versions
 if [ ! -d "$TOOLS_DIR/Maxfire.CakeScripts" ]; then
     # latest or empty string
     if [[ $CAKESCRIPTS_VERSION == "latest" ]] || [[ -z "$CAKESCRIPTS_VERSION" ]]; then
-        mono "$NUGET_EXE" install Maxfire.CakeScripts -ExcludeVersion -Prerelease -Source 'https://api.nuget.org/v3/index.json;https://www.myget.org/F/maxfire/api/v3/index.json'
+        mono tools/nuget.exe install Maxfire.CakeScripts -ExcludeVersion -Prerelease -OutputDirectory "$TOOLS_DIR" -Source 'https://api.nuget.org/v3/index.json;https://www.myget.org/F/maxfire/api/v3/index.json' > /dev/null 2>&1
     else
-        mono "$NUGET_EXE" install Maxfire.CakeScripts -Version "$CAKESCRIPTS_VERSION" -ExcludeVersion -Prerelease -Source 'https://api.nuget.org/v3/index.json;https://www.myget.org/F/maxfire/api/v3/index.json'
+        mono tools/nuget.exe install Maxfire.CakeScripts -Version "$CAKESCRIPTS_VERSION" -ExcludeVersion -Prerelease -OutputDirectory "$TOOLS_DIR" -Source 'https://api.nuget.org/v3/index.json;https://www.myget.org/F/maxfire/api/v3/index.json' > /dev/null 2>&1
     fi
-fi
 
-popd >/dev/null
-
-# Make sure that Cake has been installed.
-if [ ! -f "$CAKE_EXE" ]; then
-    echo "Could not find Cake.exe at '$CAKE_EXE'."
-    exit 1
+    if [ $? -ne 0 ]; then
+      error_exit "Failed to install Maxfire.CakeScripts"
+    fi
 fi
 
 ###########################################################################
 # RUN BUILD SCRIPT
 ###########################################################################
 
-# Start Cake
-if $SHOW_VERSION; then
-    exec mono "$CAKE_EXE" --version
-else
-    exec mono "$CAKE_EXE" $SCRIPT --verbosity=$VERBOSITY --configuration=$CONFIGURATION --target=$TARGET $DRYRUN "${SCRIPT_ARGUMENTS[@]}"
-fi
+echo "Running build script..."
+(exec "$CAKE_EXE" build.cake --bootstrap) && (exec "$CAKE_EXE" build.cake "$@")

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 namespace Maxfire.Prelude.ComponentModel
@@ -6,7 +7,7 @@ namespace Maxfire.Prelude.ComponentModel
     public class EnumerationConverter<TEnumeration> : AbstractTypeConverter<TEnumeration>
         where TEnumeration : Enumeration<TEnumeration>
     {
-        private readonly Func<TEnumeration, string> _convertToString;
+        private readonly Func<TEnumeration, string>? _convertToString;
 
         public EnumerationConverter()
         {
@@ -19,16 +20,15 @@ namespace Maxfire.Prelude.ComponentModel
 
         protected override TEnumeration Parse(string s, CultureInfo culture)
         {
-            int val;
-            TEnumeration result = int.TryParse(s, out val) ?
+            TEnumeration result = int.TryParse(s, out var val) ?
                 Enumeration.FromValue<TEnumeration>(val) :
                 Enumeration.FromName<TEnumeration>(s);
             return result;
         }
 
-        protected override string Stringify(TEnumeration value, CultureInfo culture)
+        protected override string Stringify([NotNull] TEnumeration value, CultureInfo culture)
         {
-            return _convertToString != null ? _convertToString(value) : value.Name;
+            return _convertToString is null ? value.Name : _convertToString(value);
         }
     }
 }

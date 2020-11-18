@@ -1,8 +1,9 @@
-image: Visual Studio 2017
+image: Visual Studio 2019
 
 environment:
-  github_access_token:
-    secure: sOkKqarHR1gImuuGCVvYsglaM+1mopF/c2YmzqDR4KyFgy2l4tlDlTExxdq68TZW
+  # 'appveyor build2' token
+  GITHUB_ACCESS_TOKEN:
+    secure: f6XWOyfjFS+fTkPWNoR2GbqOhhbu6KTbQdz0o+0yozD1DRA0XIci5xNJDDTtFUu1
   # MyGet apikey
   CI_DEPLOYMENT_API_KEY:
     secure: EOVLFyiHRhh9Jij3/mITdSV5JH1SzT8JUbqqTIFtvOPndNeMme3mME01ws3+5nFB

@@ -8,15 +8,24 @@
         We run our tests on both Core and Desktop/Mono.
         Note also that tests cannot be build for netstandard (not a runtime/platform)
         -->
-        <TargetFrameworks>netcoreapp2.1;net472</TargetFrameworks>
+        <TargetFrameworks>netcoreapp3.1;net472</TargetFrameworks>
         <IsTestProject>true</IsTestProject>
         <IsPackable>false</IsPackable>
         <GenerateDocumentationFile>false</GenerateDocumentationFile>
     </PropertyGroup>
 
+    <!--
+        For .NET Core 2.1 SDK this is needed to build against net472 without installing mono
+        In .NET Core 3.x SDK the Microsoft.NETFramework.ReferenceAssemblies package is not needed any more
+        See also https://github.com/dotnet/designs/pull/33#issuecomment-498362109
+        NOTE: To build in Rider on Mac/Linux we need the reference assemblies.
+    -->
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" Version="$(MicrosoftNETFrameworkReferenceAssembliesPackageVersion)" />
+    </ItemGroup>
+
     <ItemGroup>
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(MicrosoftNETTestSdkPackageVersion)" />
-        <!-- Stay on xunit 2.4.0, because 2.4.1 dropped support for netstandard2.0 -->
         <PackageReference Include="xunit" Version="$(XUnitPackageVersion)" />
         <PackageReference Include="xunit.runner.visualstudio" Version="$(XUnitPackageVersion)" />
         <PackageReference Include="Shouldly" Version="$(ShouldlyPackageVersion)" />

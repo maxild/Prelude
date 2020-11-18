@@ -30,7 +30,7 @@ namespace Maxfire.Prelude.Linq
 
         [DebuggerStepThrough]
         [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
-        public static IEnumerable Each(this IEnumerable values, Action<object> eachAction)
+        public static IEnumerable Each(this IEnumerable values, Action<object?> eachAction)
         {
             foreach (var item in values)
             {
@@ -42,7 +42,7 @@ namespace Maxfire.Prelude.Linq
 
         [DebuggerStepThrough]
         [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
-        public static IEnumerable Each(this IEnumerable values, Action<object, int> eachAction)
+        public static IEnumerable Each(this IEnumerable values, Action<object?, int> eachAction)
         {
             int i = 0;
             foreach (var item in values)

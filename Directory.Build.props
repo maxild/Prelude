@@ -5,40 +5,52 @@
     <!-- Compiler properties -->
     <PropertyGroup>
         <OutputType>Library</OutputType>
-        <LangVersion>7.3</LangVersion>
+        <LangVersion>8.0</LangVersion>
         <NoWarn>$(NoWarn);CS1591</NoWarn>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     </PropertyGroup>
 
-        <!-- AssemblyInfo properties -->
+    <!--
+        We enable annotations for all TFMs, but will only generate nullability warnings for new TFMs (i.e. netcoreapp3.1)
+        We therefore suppress nullability warnings on old TFMs (but nullable annotation context is still created on old TFMs)
+    -->
+    <Choose>
+        <When Condition=" '$(TargetFramework)' != 'netstandard2.0' and '$(TargetFramework)' != 'net472' ">
+            <PropertyGroup>
+                <Nullable>enable</Nullable>
+            </PropertyGroup>
+        </When>
+        <Otherwise>
+            <PropertyGroup>
+                <Nullable>annotations</Nullable>
+            </PropertyGroup>
+        </Otherwise>
+    </Choose>
+    <!--
+        The Nullable package is a so called source file only package that will bring in
+        source files with defintions of the new NTR annotation attributes that is part of
+        .NET Core 3.x. The package will only bring in the defintions for older TFMs.
+    -->
+    <ItemGroup>
+        <PackageReference Include="Nullable" Version="$(NullablePackageVersion)">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <!-- AssemblyInfo properties -->
     <PropertyGroup>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     </PropertyGroup>
-
-    <ItemGroup>
-        <PackageReference Include="JetBrains.Annotations" Version="$(JetBrainsAnnotationsPackageVersion)">
-            <PrivateAssets>all</PrivateAssets>
-        </PackageReference>
-    </ItemGroup>
 
     <!-- Define .NET Core constants -->
     <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
         <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
         <DebugType>portable</DebugType>
     </PropertyGroup>
-    <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.0' ">
+    <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
         <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
         <DebugType>portable</DebugType>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">
-        <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
-        <DebugType>portable</DebugType>
-    </PropertyGroup>
-
-    <!-- TODO: Maybe remove this -->
-    <PropertyGroup>
-        <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netcoreapp2.0' ">2.0.0</NetStandardImplicitPackageVersion>
-        <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">2.1.0</NetStandardImplicitPackageVersion>
     </PropertyGroup>
 
 </Project>

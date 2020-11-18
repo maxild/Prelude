@@ -1,38 +1,26 @@
 language: csharp
 os:
-  - linux # Ubuntu 14.04
+  - linux # Ubuntu 18.04
   - osx
 
-# .NET CLI require Ubuntu 14.04
 sudo: required
-dist: trusty
-addons:
-  apt:
-    sources:
-    - sourceline: 'deb [arch=amd64] https://packages.microsoft.com/repos/microsoft-ubuntu-trusty-prod trusty main'
-      key_url: 'https://packages.microsoft.com/keys/microsoft.asc'
-    packages:
-    - gettext
-    - libcurl4-openssl-dev
-    - libicu-dev
-    - libssl-dev
-    - libunwind8
-    #- dotnet-dev-1.1.4
-    #- dotnet-sdk-2.1.4
-    #- dotnet-runtime-1.1.6
-    #- dotnet-dev-1.1.4 # .Net Core 1.1 installed via: apt-get install dotnet-dev-1.1.4)
-    #- dotnet-sharedframework-microsoft.netcore.app-1.0.5
-    #- dotnet-sharedframework-microsoft.netcore.app-1.1.2
+dist: bionic
 
-# .NET CLI require OSX 10.10
-osx_image: xcode8.3
+# OS X 10.12
+osx_image: xcode11.2
 
 mono:
-  #- 4.4.2
+  # 5.12.0
+  # 5.20.1
   - latest
 
-#dotnet: 1.0.4
+dotnet: 3.1.301
+
+before_install:
+  - git fetch --unshallow # Travis always does a shallow clone, but GitVersion needs the full history including branches and tags
+  - git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+  - git fetch origin
 
 script:
-  - ./build.sh --target Travis --configuration Debug --verbosity diagnostic
-  - ./build.sh --target Travis --configuration Release --verbosity diagnostic
+  - ./build.sh --target=Travis --configuration=Debug --verbosity=diagnostic
+  - ./build.sh --target=Travis --configuration=Release --verbosity=diagnostic

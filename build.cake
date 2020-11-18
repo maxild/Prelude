@@ -1,9 +1,4 @@
 ///////////////////////////////////////////////////////////////////////////////
-// TOOLS
-///////////////////////////////////////////////////////////////////////////////
-#tool "nuget:?package=gitreleasemanager&version=0.8.0"
-
-///////////////////////////////////////////////////////////////////////////////
 // SCRIPTS
 ///////////////////////////////////////////////////////////////////////////////
 #load "./tools/Maxfire.CakeScripts/content/all.cake"
@@ -46,25 +41,13 @@ Setup(context =>
                         .WithProperty("FileVersion", parameters.VersionInfo.AssemblyFileVersion);
                         //.WithProperty("PackageReleaseNotes", string.Concat("\"", releaseNotes, "\""));
 
-    // See https://github.com/dotnet/sdk/issues/335#issuecomment-346951034
-    if (false == parameters.IsRunningOnWindows)
-    {
-        // Since Cake runs on Mono, it is straight forward to resolve the path to the Mono libs (reference assemblies).
-        // Find where .../mono/5.2/mscorlib.dll is on your machine.
-        var frameworkPathOverride = new FilePath(typeof(object).Assembly.Location).GetDirectory().FullPath + "/";
-
-        // Use FrameworkPathOverride when not running on Windows. MSBuild uses
-        // this property to locate the Framework libraries required to build your code.
-        Information("Build will use FrameworkPathOverride={0} since not building on Windows.", frameworkPathOverride);
-        msBuildSettings.WithProperty("FrameworkPathOverride", frameworkPathOverride);
-    }
-
-    Information("Building version {0} of {1} ({2}, {3}) using version {4} of Cake. (IsTagPush: {5})",
+    Information("Building version {0} of {1} ({2}, {3}) using version {4} of Cake and '{5}' of GitVersion. (IsTagPush: {6})",
         parameters.VersionInfo.SemVer,
         parameters.ProjectName,
         parameters.Configuration,
         parameters.Target,
         parameters.VersionInfo.CakeVersion,
+        parameters.VersionInfo.GitVersionVersion,
         parameters.IsTagPush);
 });
 
@@ -74,6 +57,9 @@ Setup(context =>
 
 Task("Default")
     .IsDependentOn("Package");
+
+Task("Setup")
+    .IsDependentOn("Generate-CommonAssemblyInfo");
 
 Task("Travis")
     .IsDependentOn("Show-Info")
@@ -131,10 +117,7 @@ Task("Test")
     var testProjects = GetFiles($"./{parameters.Paths.Directories.Test}/**/*.csproj");
     foreach(var project in testProjects)
     {
-        // This takes time...maybe only run tests on a single runtime when developing
-        // What TFM should we use for desktop? it doesn't matter net452 and net472 cannot be installed side-by-side
-        // What TFM should we use for core? 2.0 or 2.1...both or newest...2.1 should be sufficient
-        foreach (var tfm in new [] {"net472", "netcoreapp2.1"})
+        foreach (var tfm in new [] {"net472", "netcoreapp3.1"})
         {
             DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
             {
@@ -222,11 +205,7 @@ Task("Publish-CIFeed-MyGet")
     .WithCriteria(() => parameters.ShouldDeployToCIFeed)
     .Does(() =>
 {
-    var packages =
-            GetFiles(parameters.Paths.Directories.Artifacts + "/*.nupkg") -
-            GetFiles(parameters.Paths.Directories.Artifacts + "/*.symbols.nupkg");
-
-    foreach (var package in packages)
+    foreach (var package in GetFiles(parameters.Paths.Directories.Artifacts + "/*.nupkg"))
     {
         NuGetPush(package.FullPath, new NuGetPushSettings {
             Source = parameters.CIFeed.SourceUrl,
@@ -248,14 +227,7 @@ Task("Publish-ProdFeed-NuGet")
     .WithCriteria(() => parameters.ShouldDeployToProdFeed)
     .Does(() =>
 {
-    // Note: NuGet automatically publishes to symbolsource.org automatically if it detects a symbol package
-    // See also https://docs.microsoft.com/en-us/nuget/create-packages/symbol-packages
-
-    var packages =
-            GetFiles(parameters.Paths.Directories.Artifacts + "/*.nupkg") -
-            GetFiles(parameters.Paths.Directories.Artifacts + "/*.symbols.nupkg");
-
-    foreach (var package in packages)
+    foreach (var package in GetFiles(parameters.Paths.Directories.Artifacts + "/*.nupkg"))
     {
         NuGetPush(package.FullPath, new NuGetPushSettings {
             Source = parameters.ProdFeed.SourceUrl,
