@@ -37,14 +37,14 @@ namespace Maxfire.Prelude.ComponentModel.Tests
         private DateTimeTypeConverter Sut { get; }
 
         [Fact]
-        public void DateTimeTypeConverter_CanConvertFromAndToString()
+        public void CanConvertFromAndToString()
         {
             Sut.CanConvertFrom(typeof(string)).ShouldBeTrue();
             Sut.CanConvertTo(typeof(string)).ShouldBeTrue();
         }
 
         [Fact]
-        public void DateTimeConverter_ConvertToNullDestinationType_ThrowsArgumentNull()
+        public void ConvertToNullDestinationType_ThrowsArgumentNull()
         {
             Assert.Throws<ArgumentNullException>(() =>
                 Sut.ConvertTo(null, CultureInfo.InvariantCulture, new DateTime(1970, 6, 3), null!))
@@ -52,51 +52,49 @@ namespace Maxfire.Prelude.ComponentModel.Tests
         }
 
         [Fact]
-        public void DateTimeConverter_ConvertTo_WrongDestinationType_ThrowsNotSupported()
+        public void ConvertTo_WrongDestinationType_ThrowsNotSupported()
         {
-            // This exception is thrown by the BCL (i.e. base.ConvertTo)
             Assert.Throws<NotSupportedException>(() =>
                     Sut.ConvertTo(null, CultureInfo.InvariantCulture, value: new DateTime(1970, 6, 3), typeof(DateTimeOffset)))
                 .Message.ShouldBe("DateTimeTypeConverter is unable to convert System.DateTime to System.DateTimeOffset."); // TODO: add wrong destination type
         }
 
         [Fact]
-        public void DateTimeTypeConverter_ConvertToString_WrongSourceTypeOfValue_ThrowsNotSupported()
+        public void ConvertToString_WrongSourceTypeOfValue_ThrowsNotSupported()
         {
-            // This exception is thrown by our code (i.e. AbstractTypeConverter.ConvertTo)
             Assert.Throws<NotSupportedException>(() => Sut.ConvertToString(value: 8))
                 .Message.ShouldBe("DateTimeTypeConverter is unable to convert System.Int32 to System.String."); // TODO: add wrong source type of value
         }
 
         [Fact]
-        public void DateTimeTypeConverter_ConvertToString_WrongSourceTypeOfValue_ThrowsNotSupported_2()
+        public void ConvertToString_WrongSourceTypeOfValue_ThrowsNotSupported_2()
         {
             Assert.Throws<NotSupportedException>(() => Sut.ConvertToString(value: "1970-06-03"))
                 .Message.ShouldBe("DateTimeTypeConverter is unable to convert System.String to System.String.");
         }
 
         [Fact]
-        public void DateTypeConverter_ConvertToString_ValueIsNull_ReturnsEmptyString()
+        public void ConvertToString_ValueIsNull_ReturnsEmptyString()
         {
             new DateTimeTypeConverter(supportNullToEmptyString: true).ConvertToString(value: null!)
                 .ShouldBe(string.Empty);
         }
 
         [Fact]
-        public void DateTypeConverter_ConvertToString_ValueIsNull_ThrowsNotSupported()
+        public void ConvertToString_ValueIsNull_ThrowsNotSupported()
         {
             Assert.Throws<NotSupportedException>(() => Sut.ConvertToString(null!))
                 .Message.ShouldBe("DateTimeTypeConverter is unable to convert (null) to System.String.");
         }
 
         [Fact]
-        public void DateTypeConverter_ConvertToString()
+        public void ConvertToString()
         {
             Sut.ConvertToString(new DateTime(1970, 6, 3)).ShouldBe("1970-06-03");
         }
 
         [Fact]
-        public void DateTypeConverter_ConvertFromInvalidType_ThrowsNotSupported()
+        public void ConvertFromInvalidType_ThrowsNotSupported()
         {
             // This exception is thrown by BCL (i.e. base.ConvertFrom)
             Assert.Throws<NotSupportedException>(() => Sut.ConvertFrom(value: 8))
@@ -104,7 +102,7 @@ namespace Maxfire.Prelude.ComponentModel.Tests
         }
 
         [Fact]
-        public void DateTypeConverter_ConvertFromNull_ThrowsNotSupported()
+        public void ConvertFromNull_ThrowsNotSupported()
         {
             // This exception is thrown by BCL (i.e. base.ConvertFrom)
             Assert.Throws<NotSupportedException>(() => Sut.ConvertFrom(value: null))
@@ -112,7 +110,7 @@ namespace Maxfire.Prelude.ComponentModel.Tests
         }
 
         [Fact]
-        public void DateTypeConverter_ConvertFromEmptyString_ThrowsFormat()
+        public void ConvertFromEmptyString_ThrowsFormat()
         {
             // This exception is thrown by Parse
             Assert.Throws<FormatException>(() => Sut.ConvertFrom(value: ""))
@@ -120,7 +118,7 @@ namespace Maxfire.Prelude.ComponentModel.Tests
         }
 
         [Fact]
-        public void DateTypeConverter_ConvertFromBogusString_ThrowsFormat()
+        public void ConvertFromBogusString_ThrowsFormat()
         {
             // This exception is thrown by Parse
             Assert.Throws<FormatException>(() => Sut.ConvertFrom(value: "bogus"))
