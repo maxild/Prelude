@@ -8,24 +8,25 @@ namespace Maxfire.Prelude.ComponentModel
     {
         private readonly Func<TEnumeration, string>? _convertToString;
 
-        public EnumerationConverter()
+        public EnumerationConverter() : base(supportNullToEmptyString: false)
         {
         }
 
-        protected EnumerationConverter(Func<TEnumeration, string> converter)
+        protected EnumerationConverter(Func<TEnumeration, string> converter) : base(supportNullToEmptyString: false)
         {
             _convertToString = converter;
         }
 
-        protected override TEnumeration Parse(string s, CultureInfo? culture)
+        protected override TEnumeration Parse(string s, CultureInfo culture)
         {
-            TEnumeration result = int.TryParse(s, out var val) ?
-                Enumeration.FromValue<TEnumeration>(val) :
-                Enumeration.FromName<TEnumeration>(s);
-            return result;
+            TEnumeration? result = int.TryParse(s, out var val) ?
+                Enumeration.FromValueOrDefault<TEnumeration>(val) :
+                Enumeration.FromNameOrDefault<TEnumeration>(s);
+
+            return result ?? throw new FormatException(GetParseErrorMessage(s));
         }
 
-        protected override string Stringify(TEnumeration value, CultureInfo? culture)
+        protected override string Stringify(TEnumeration value, CultureInfo culture)
         {
             return _convertToString is null ? value.Name : _convertToString(value);
         }
