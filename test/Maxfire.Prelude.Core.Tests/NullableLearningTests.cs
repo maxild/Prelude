@@ -16,14 +16,14 @@ namespace Maxfire.Prelude.Tests
             int? x = null;
             x.ShouldBeNull();
             (x is null).ShouldBeTrue();
-            (x is int?).ShouldBeTrue();
+            (x is int?).ShouldBeFalse();
             (x is int).ShouldBeFalse();
 
             int? y = 6;
             y.ShouldNotBeNull();
             (y is null).ShouldBeFalse();
             (y is int?).ShouldBeTrue();
-            (y is int).ShouldBeFalse();
+            (y is int).ShouldBeTrue();
         }
     }
 }
