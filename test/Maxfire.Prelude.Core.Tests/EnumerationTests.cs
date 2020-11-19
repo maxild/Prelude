@@ -71,9 +71,9 @@ namespace Maxfire.Prelude.Tests
         [Fact]
         public void FromNameThrowsIfNotFound()
         {
-            Assert.Throws<ArgumentException>(() => Enumeration.FromName<FooBarEnumeration>("Rubbish"))
+            Assert.Throws<FormatException>(() => Enumeration.FromName<FooBarEnumeration>("Rubbish"))
                 .Message.ShouldBe("'Rubbish' is not a valid name for 'Maxfire.Prelude.Tests.EnumerationTests+FooBarEnumeration'.");
-            Assert.Throws<ArgumentException>(() => Enumeration.FromName(typeof(FooBarEnumeration), "Rubbish"))
+            Assert.Throws<FormatException>(() => Enumeration.FromName(typeof(FooBarEnumeration), "Rubbish"))
                 .Message.ShouldBe("'Rubbish' is not a valid name for 'Maxfire.Prelude.Tests.EnumerationTests+FooBarEnumeration'.");
         }
 
