@@ -12,8 +12,7 @@ namespace Maxfire.Prelude.ComponentModel
     /// </summary>
     public abstract class AbstractTypeConverter<T> : TypeConverter
     {
-        private readonly bool _supportNullToEmptyString; // allow null in ConvertTo
-        //private readonly bool _supportNull
+        private readonly bool _supportNullToEmptyString; // allow null value in ConvertTo
 
         protected AbstractTypeConverter(bool supportNullToEmptyString)
         {
@@ -30,7 +29,7 @@ namespace Maxfire.Prelude.ComponentModel
             return destinationType == typeof(string) || base.CanConvertTo(context, destinationType);
         }
 
-        public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo culture,
+        public override object ConvertFrom(ITypeDescriptorContext? context, CultureInfo culture,
             object? value)
         {
             return value switch
@@ -41,12 +40,11 @@ namespace Maxfire.Prelude.ComponentModel
             };
         }
 
-        private object? ConvertFromException(object? value)
-        {
+        [DoesNotReturn]
+        private object ConvertFromException(object? value) =>
             throw new NotSupportedException(GetConvertFromErrorMessage(value?.GetType().FullName));
-        }
 
-        public override object? ConvertTo(ITypeDescriptorContext? context, CultureInfo culture, object? value,
+        public override object ConvertTo(ITypeDescriptorContext? context, CultureInfo culture, object? value,
             Type destinationType)
         {
             // We keep this check, because then we do not depend
@@ -65,7 +63,8 @@ namespace Maxfire.Prelude.ComponentModel
                     // We could delegate to base.ConvertTo, BUT...
                     // TypeConverter will always succeed converting to a string (it uses
                     // IFormattable.ToString or Object.ToString). This way DateTimeTypeConverter
-                    // will be able to convert System.Int32 to a System.String. We don't want that
+                    // will be able to convert System.Int32 to a System.String.
+                    // We don't want that!
                     _ => ConvertToException(value, destinationType) // invalid (non-null) value
                 };
             }
@@ -84,28 +83,25 @@ namespace Maxfire.Prelude.ComponentModel
             return $"{GetFullName(GetType())} cannot convert from {valueAsString}.";
         }
 
-        private string GetConvertFromErrorMessage(string? typeName)
-        {
-            return $"{GetFullName(GetType())} cannot convert from {typeName ?? "(null)"}.";
-        }
+        private string GetConvertFromErrorMessage(string? typeName) =>
+            $"{GetFullName(GetType())} cannot convert from {typeName ?? "(null)"}.";
 
-        private object? ConvertNullToException(Type destinationType) =>
+        private object ConvertNullToException(Type destinationType) =>
             _supportNullToEmptyString
                 ? string.Empty
                 : ConvertToException(null, destinationType);
 
         // Helper that encapsulate throw exception
-        private object? ConvertToException(object? value, Type destinationType)
-        {
+        private object ConvertToException(object? value, Type destinationType) =>
             throw new NotSupportedException(
                 $"{GetFullName(GetType())} is unable to convert {value?.GetType().FullName ?? "(null)"} to {destinationType.FullName}.");
-        }
 
         // TODO: Make ReflectionUtils with this recursive function
         static string GetFullName(Type t)
         {
             if (!t.IsGenericType)
                 return t.Name;
+
             var sb = new StringBuilder();
 
             sb.Append(t.Name.Substring(0, t.Name.LastIndexOf("`", StringComparison.Ordinal)));
