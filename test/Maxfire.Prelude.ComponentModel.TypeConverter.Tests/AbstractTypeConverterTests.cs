@@ -96,7 +96,6 @@ namespace Maxfire.Prelude.ComponentModel.Tests
         [Fact]
         public void ConvertFromInvalidType_ThrowsNotSupported()
         {
-            // This exception is thrown by BCL (i.e. base.ConvertFrom)
             Assert.Throws<NotSupportedException>(() => Sut.ConvertFrom(value: 8))
                 .Message.ShouldBe("DateTimeTypeConverter cannot convert from System.Int32.");
         }
@@ -104,7 +103,6 @@ namespace Maxfire.Prelude.ComponentModel.Tests
         [Fact]
         public void ConvertFromNull_ThrowsNotSupported()
         {
-            // This exception is thrown by BCL (i.e. base.ConvertFrom)
             Assert.Throws<NotSupportedException>(() => Sut.ConvertFrom(value: null))
                 .Message.ShouldBe("DateTimeTypeConverter cannot convert from (null).");
         }

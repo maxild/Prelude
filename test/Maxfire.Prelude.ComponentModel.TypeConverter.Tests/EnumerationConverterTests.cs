@@ -57,11 +57,9 @@ namespace Maxfire.Prelude.ComponentModel.Tests
                 .ParamName.ShouldBe("destinationType");
         }
 
-
         [Fact]
         public void ConvertTo_WrongDestinationType_ThrowsNotSupported()
         {
-            // This exception is thrown by the BCL (i.e. base.ConvertTo)
             Assert.Throws<NotSupportedException>(() =>
                     Sut.ConvertTo(null, CultureInfo.InvariantCulture, value: BooleanEnumeration.True, typeof(DateTime)))
                 .Message.ShouldBe(
@@ -71,7 +69,6 @@ namespace Maxfire.Prelude.ComponentModel.Tests
         [Fact]
         public void ConvertToString_WrongSourceTypeOfValue_ThrowsNotSupported()
         {
-            // This exception is thrown by our code (i.e. AbstractTypeConverter.ConvertTo)
             Assert.Throws<NotSupportedException>(() => Sut.ConvertToString(value: 8))
                 .Message.ShouldBe("EnumerationConverter<BooleanEnumeration> is unable to convert System.Int32 to System.String.");
         }
