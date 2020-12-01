@@ -153,7 +153,7 @@ namespace Maxfire.Prelude
             var matchingItem = FromNameOrDefault<TEnumeration>(name);
             if (matchingItem is null)
             {
-                throw new ArgumentException($"'{name}' is not a valid name for '{typeof(TEnumeration)}'.");
+                throw new FormatException($"'{name}' is not a valid name for '{typeof(TEnumeration)}'.");
             }
             return matchingItem;
         }
@@ -163,7 +163,7 @@ namespace Maxfire.Prelude
             var matchingItem = FromNameOrDefault(enumerationType, name);
             if (matchingItem is null)
             {
-                throw new ArgumentException($"'{name}' is not a valid name for '{enumerationType}'.");
+                throw new FormatException($"'{name}' is not a valid name for '{enumerationType}'.");
             }
             return matchingItem;
         }

@@ -5,13 +5,13 @@
     <!-- Compiler properties -->
     <PropertyGroup>
         <OutputType>Library</OutputType>
-        <LangVersion>8.0</LangVersion>
+        <LangVersion>9.0</LangVersion>
         <NoWarn>$(NoWarn);CS1591</NoWarn>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     </PropertyGroup>
 
     <!--
-        We enable annotations for all TFMs, but will only generate nullability warnings for new TFMs (i.e. netcoreapp3.1)
+        We enable annotations for all TFMs, but will only generate nullability warnings for new TFMs (i.e. netcoreapp3.1, net5.0)
         We therefore suppress nullability warnings on old TFMs (but nullable annotation context is still created on old TFMs)
     -->
     <Choose>
@@ -49,6 +49,10 @@
         <DebugType>portable</DebugType>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
+        <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
+        <DebugType>portable</DebugType>
+    </PropertyGroup>
+    <PropertyGroup Condition=" '$(TargetFramework)' == 'net5.0' ">
         <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
         <DebugType>portable</DebugType>
     </PropertyGroup>

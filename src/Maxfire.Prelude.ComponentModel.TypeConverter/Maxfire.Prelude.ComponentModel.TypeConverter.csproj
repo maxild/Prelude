@@ -13,8 +13,4 @@
         <ProjectReference Include="..\Maxfire.Prelude.Core\Maxfire.Prelude.Core.csproj" />
     </ItemGroup>
 
-    <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-        <PackageReference Include="System.ComponentModel.TypeConverter" Version="$(SystemComponentModelTypeConverterPackageVersion)" />
-    </ItemGroup>
-
 </Project>

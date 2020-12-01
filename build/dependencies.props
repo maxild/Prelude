@@ -20,8 +20,5 @@
         <!-- SourceLink -->
         <MicrosoftSourceLinkGitHubPackageVersion>1.0.0</MicrosoftSourceLinkGitHubPackageVersion>
 
-        <!-- System.ComponentModel.TypeConverter -->
-        <SystemComponentModelTypeConverterPackageVersion>4.3.0</SystemComponentModelTypeConverterPackageVersion>
-
     </PropertyGroup>
 </Project>

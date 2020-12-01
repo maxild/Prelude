@@ -1,6 +1,8 @@
 # Prelude
 
-The Prelude repository contains extensions to the .NET Framework (`netstandard2.0`) and .NET Core 3.1 (`netcoreapp3.1`) used by several projects written by Morten Maxild.
+The Prelude repository contains extensions to the .NET Framework (`netstandard2.0`) and .NET 5 (`net5.0`) used by several projects written by Morten Maxild.
+
+You need .NET SDK 5.0.100 to build. You also need vs2019 16.8+ or Rider 2020.3+ to work with C# 9.
 
 The Prelude packages (libraries) are build with SourceLink support.
 
