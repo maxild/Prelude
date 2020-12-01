@@ -1,6 +1,6 @@
 # Prelude
 
-The Prelude repository contains extensions to the .NET Framework (`netstandard2.0`) and .NET Core 3.1 (`netcoreapp3.1`) used by several projects written by Morten Maxild.
+The Prelude repository contains extensions to the .NET Framework (`netstandard2.0`) and .NET 5 (`net5.0`) used by several projects written by Morten Maxild.
 
 The Prelude packages (libraries) are build with SourceLink support.
 
