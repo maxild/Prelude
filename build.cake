@@ -117,7 +117,7 @@ Task("Test")
     var testProjects = GetFiles($"./{parameters.Paths.Directories.Test}/**/*.csproj");
     foreach(var project in testProjects)
     {
-        foreach (var tfm in new [] {"net472", "netcoreapp3.1"})
+        foreach (var tfm in new [] {"net472", "netcoreapp3.1", "net5.0"})
         {
             DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
             {
