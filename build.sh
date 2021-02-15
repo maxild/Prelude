@@ -69,6 +69,17 @@ function parse_sdk_version() {
   echo "$major" "$minor" "$feature" "$patch"
 }
 
+function parse_semver() {
+  local major
+  local minor
+  local patch
+  local version="$*"
+  major=$(echo "$version" | cut -d. -f1)
+  minor=$(echo "$version" | cut -d. -f2)
+  patch=$(echo "$version" | cut -d. -f3)
+  echo "$major" "$minor" "$patch"
+}
+
 DOTNET_CHANNEL='LTS'
 
 export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
@@ -151,16 +162,37 @@ install_tool 'gitreleasemanager.tool' 'dotnet-gitreleasemanager' "$GITRELEASEMAN
 ###########################################################################
 
 if [ ! -d "$TOOLS_DIR/Maxfire.CakeScripts" ]; then
-  # latest or empty string
+  # latest or empty string is interpreted as 'just use the latest' (floating version, not determinsitic)
   if [[ $CAKESCRIPTS_VERSION == "latest" ]] || [[ -z "$CAKESCRIPTS_VERSION" ]]; then
-    mono tools/nuget.exe install Maxfire.CakeScripts -ExcludeVersion -Prerelease -OutputDirectory "$TOOLS_DIR" -Source 'https://api.nuget.org/v3/index.json;https://www.myget.org/F/maxfire/api/v3/index.json' >/dev/null 2>&1
+    mono tools/nuget.exe install Maxfire.CakeScripts -ExcludeVersion -Prerelease \
+         -OutputDirectory "$TOOLS_DIR" -Source 'https://api.nuget.org/v3/index.json;https://www.myget.org/F/maxfire/api/v3/index.json' >/dev/null 2>&1
   else
-    mono tools/nuget.exe install Maxfire.CakeScripts -Version "$CAKESCRIPTS_VERSION" -ExcludeVersion -Prerelease -OutputDirectory "$TOOLS_DIR" -Source 'https://api.nuget.org/v3/index.json;https://www.myget.org/F/maxfire/api/v3/index.json' >/dev/null 2>&1
+    mono tools/nuget.exe install Maxfire.CakeScripts -Version "$CAKESCRIPTS_VERSION" -ExcludeVersion -Prerelease \
+         -OutputDirectory "$TOOLS_DIR" -Source 'https://api.nuget.org/v3/index.json;https://www.myget.org/F/maxfire/api/v3/index.json' >/dev/null 2>&1
   fi
 
   # shellcheck disable=SC2181
   if [ $? -ne 0 ]; then
     error_exit "Failed to install Maxfire.CakeScripts"
+  fi
+else
+  # Maxfire.CakeScripts is already installed, check what version is installed
+  CAKESCRIPTS_INSTALLED_VERSION=$(cat "$TOOLS_DIR/Maxfire.CakeScripts/content/version.txt")
+  echo "Maxfire.CakeScripts version $CAKESCRIPTS_INSTALLED_VERSION found."
+  echo "Maxfire.CakeScripts version $CAKESCRIPTS_VERSION is required."
+
+  # Parse the version into major, minor, patch (x.y.z)
+  # read -r foundMajor foundMinor foundPatch < <(parse_semver "$CAKESCRIPTS_INSTALLED_VERSION")
+  # read -r major minor patch < <(parse_semver "$CAKESCRIPTS_VERSION")
+
+  # if [[ "$foundMajor" != "$major" ]] || \
+  #    [[ "$foundMinor" != "$minor" ]] || \
+  #    [[ "$foundPatch" != "$patch" ]]; then
+
+  if [[ "$CAKESCRIPTS_VERSION" != "$CAKESCRIPTS_INSTALLED_VERSION" ]]; then
+    echo "Upgrading to version $CAKESCRIPTS_VERSION of Maxfire.CakeScripts..."
+    mono tools/nuget.exe install Maxfire.CakeScripts -Version "$CAKESCRIPTS_VERSION" -ExcludeVersion -Prerelease \
+         -OutputDirectory "$TOOLS_DIR" -Source 'https://api.nuget.org/v3/index.json;https://www.myget.org/F/maxfire/api/v3/index.json' >/dev/null 2>&1
   fi
 fi
 
