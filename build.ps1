@@ -216,11 +216,15 @@ if (-not (Test-Path (Join-Path $TOOLS_DIR 'Maxfire.CakeScripts'))) {
 else {
   # Maxfire.CakeScripts is already installed, check what version is installed
   $versionTxtPath = Join-Path $TOOLS_DIR "Maxfire.CakeScripts" | Join-Path -ChildPath "content" | Join-Path -ChildPath "version.txt"
-  $CakeScriptsInstalledVersion = "$(Get-Content -Path $versionTxtPath -TotalCount 1 -Encoding ascii)".Trim()
+  $CakeScriptsInstalledVersion = '0.0.0'
+  if (Test-Path $versionTxtPath) {
+    $CakeScriptsInstalledVersion = "$(Get-Content -Path $versionTxtPath -TotalCount 1 -Encoding ascii)".Trim()
+  }
   Write-Host "Maxfire.CakeScripts version $CakeScriptsInstalledVersion found."
   Write-Host "Maxfire.CakeScripts version $CakeScriptsVersion is required."
 
   if ($CakeScriptsVersion -ne $CakeScriptsInstalledVersion) {
+    $NUGET_EXE = Join-Path $TOOLS_DIR 'nuget.exe'
     Write-Host "Upgrading to version $CakeScriptsVersion of Maxfire.CakeScripts..."
     & $NUGET_EXE install Maxfire.CakeScripts -Version $CakeScriptsVersion -ExcludeVersion -Prerelease `
       -OutputDirectory `"$TOOLS_DIR`" -Source 'https://api.nuget.org/v3/index.json;https://www.myget.org/F/maxfire/api/v3/index.json' | Out-Null

@@ -69,17 +69,6 @@ function parse_sdk_version() {
   echo "$major" "$minor" "$feature" "$patch"
 }
 
-function parse_semver() {
-  local major
-  local minor
-  local patch
-  local version="$*"
-  major=$(echo "$version" | cut -d. -f1)
-  minor=$(echo "$version" | cut -d. -f2)
-  patch=$(echo "$version" | cut -d. -f3)
-  echo "$major" "$minor" "$patch"
-}
-
 DOTNET_CHANNEL='LTS'
 
 export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
@@ -177,17 +166,13 @@ if [ ! -d "$TOOLS_DIR/Maxfire.CakeScripts" ]; then
   fi
 else
   # Maxfire.CakeScripts is already installed, check what version is installed
-  CAKESCRIPTS_INSTALLED_VERSION=$(cat "$TOOLS_DIR/Maxfire.CakeScripts/content/version.txt")
+  CAKESCRIPTS_INSTALLED_VERSION='0.0.0'
+  versionTxtPath="$TOOLS_DIR/Maxfire.CakeScripts/content/version.txt"
+  if [[ -f "$versionTxtPath" ]]; then
+    CAKESCRIPTS_INSTALLED_VERSION=$(cat "$versionTxtPath")
+  fi
   echo "Maxfire.CakeScripts version $CAKESCRIPTS_INSTALLED_VERSION found."
   echo "Maxfire.CakeScripts version $CAKESCRIPTS_VERSION is required."
-
-  # Parse the version into major, minor, patch (x.y.z)
-  # read -r foundMajor foundMinor foundPatch < <(parse_semver "$CAKESCRIPTS_INSTALLED_VERSION")
-  # read -r major minor patch < <(parse_semver "$CAKESCRIPTS_VERSION")
-
-  # if [[ "$foundMajor" != "$major" ]] || \
-  #    [[ "$foundMinor" != "$minor" ]] || \
-  #    [[ "$foundPatch" != "$patch" ]]; then
 
   if [[ "$CAKESCRIPTS_VERSION" != "$CAKESCRIPTS_INSTALLED_VERSION" ]]; then
     echo "Upgrading to version $CAKESCRIPTS_VERSION of Maxfire.CakeScripts..."
