@@ -14,6 +14,11 @@ environment:
 init:
   - git config --global core.autocrlf input
 
+install:
+  - dotnet --info
+  # The last part will make CMD ignore any non-zero exit codes from 'dotnet --version'
+  - dotnet --version & exit 0
+
 build_script:
   - ps: .\build.ps1 -target AppVeyor -configuration Debug -verbosity diagnostic
   - ps: .\build.ps1 -target AppVeyor -configuration Release -verbosity diagnostic
