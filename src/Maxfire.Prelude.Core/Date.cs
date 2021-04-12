@@ -46,7 +46,7 @@ namespace Maxfire.Prelude
     [Serializable]
     [TypeConverter(typeof(DateTypeConverter))]
     [DebuggerDisplay("{" + nameof(DebuggerDisplay) + ",nq}")]
-    public struct Date : IComparable, IFormattable, IComparable<Date>, IEquatable<Date>
+    public readonly struct Date : IComparable, IFormattable, IComparable<Date>, IEquatable<Date>
     {
         class DateTypeConverter : AbstractTypeConverter<Date>
         {
@@ -56,8 +56,8 @@ namespace Maxfire.Prelude
 
             protected override Date Parse(string s, CultureInfo? culture)
             {
-                Date? result = Date.TryParse(s, DateFormat.Default) ??
-                               Date.TryParse(s, DateFormat.Iso);
+                Date? result = TryParse(s, DateFormat.Default) ??
+                               TryParse(s, DateFormat.Iso);
 
                 return result ?? throw new FormatException(GetParseErrorMessage(s));
             }
@@ -535,12 +535,12 @@ namespace Maxfire.Prelude
                 return 1;
             }
 
-            if (!(obj is Date))
+            if (obj is not Date date)
             {
                 throw new ArgumentException($"The compared object instance is not of type {typeof(Date).FullName}.");
             }
 
-            return CompareTo((Date) obj);
+            return CompareTo(date);
         }
     }
 }
