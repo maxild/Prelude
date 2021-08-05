@@ -31,7 +31,7 @@
     </PropertyGroup>
 
     <!-- Common Assembly Information  -->
-    <ItemGroup Condition=" '$(IsTestProject)' != 'true' and '$(IsPackable)' != 'false' ">
+    <ItemGroup Condition=" Exists('..\CommonAssemblyInfo.cs') and '$(IsPackable)' == 'true' ">
         <Compile Include="..\CommonAssemblyInfo.cs" />
     </ItemGroup>
 
