@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -235,12 +236,12 @@ namespace Maxfire.Prelude
             return Value.CompareTo(other.Value);
         }
 
-        public override bool Equals(object? obj)
+        public override bool Equals([NotNullWhen(true)] object? obj)
         {
             return !(obj is null) && GetType() == obj.GetType() && Value == ((TEnumeration) obj).Value;
         }
 
-        public virtual bool Equals(TEnumeration? other)
+        public virtual bool Equals([NotNullWhen(true)] TEnumeration? other)
         {
             // even here we test for type equality, because the derived classes can (in theory) be based on deep inheritance chains
             return !(other is null) && GetType() == other.GetType() && Value == other.Value;
