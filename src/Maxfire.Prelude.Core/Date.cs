@@ -285,9 +285,7 @@ namespace Maxfire.Prelude
             int sign = 1;
             if (d1 > d2)
             {
-                Date tmp = d1;
-                d1 = d2;
-                d2 = tmp;
+                (d1, d2) = (d2, d1);
                 sign = -1;
             }
 
@@ -361,7 +359,7 @@ namespace Maxfire.Prelude
             throw new FormatException("Unknown format: " + format);
         }
 
-        public override bool Equals(object? obj)
+        public override bool Equals([NotNullWhen(true)] object? obj)
         {
             if (obj is null)
             {
