@@ -114,29 +114,24 @@ Task("Test")
     .IsDependentOn("Build")
     .Does(() =>
 {
-    var testProjects = GetFiles($"./{parameters.Paths.Directories.Test}/**/*.csproj");
-    foreach(var project in testProjects)
+    // Only testable projects (<IsTestProject>true</IsTestProject>) will be test-executed
+    // We do not need to exclude everything under 'src/submodules',
+    // because we use the single master solution
+    DotNetCoreTest(parameters.Paths.Files.Solution.FullPath, new DotNetCoreTestSettings
     {
-        foreach (var tfm in new [] {"net472", "netcoreapp3.1", "net5.0"})
-        {
-            DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
-            {
-                Framework = tfm,
-                NoBuild = true,
-                NoRestore = true,
-                Configuration = parameters.Configuration
-            });
-        }
+        NoBuild = true,
+        NoRestore = true,
+        Configuration = parameters.Configuration
+    });
 
-        // NOTE: .NET Framework / Mono (net472 on *nix and Mac OSX)
-        // ========================================================
-        // Microsoft does not officially support Mono via .NET Core SDK. Their support for .NET Core
-        // on Linux and OS X starts and ends with .NET Core. Anyway we test on Mono for now, and maybe
-        // remove Mono support soon.
-        //
-        // For Mono to support dotnet-xunit we have to put { "appDomain": "denied" } in config
-        // See https://github.com/xunit/xunit/issues/1357#issuecomment-314416426
-    }
+    // NOTE: .NET Framework / Mono (net472 on *nix and Mac OSX)
+    // ========================================================
+    // Microsoft does not officially support Mono via .NET Core SDK. Their support for .NET Core
+    // on Linux and OS X starts and ends with .NET Core. Anyway we test on Mono for now, and maybe
+    // remove Mono support soon.
+    //
+    // For Mono to support dotnet-xunit we have to put { "appDomain": "denied" } in config
+    // See https://github.com/xunit/xunit/issues/1357#issuecomment-314416426
 });
 
 Task("Package")
