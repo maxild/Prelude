@@ -1,6 +1,4 @@
 <Project>
-    <!-- When searching for a Directory.Build.props file, MSBuild walks the directory structure upwards from your project location  -->
-    <Import Project="..\Directory.Build.props" />
 
     <PropertyGroup>
         <TargetFrameworks>netstandard2.0;net5.0</TargetFrameworks>
@@ -9,51 +7,7 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
 
-    <!-- NuGet metadata properties -->
-    <PropertyGroup>
-        <Product>Maxfire Prelude Libraries</Product>
-        <PackageId>$(AssemblyName)</PackageId>
-        <Copyright>Copyright (c) Morten Maxild 2016.</Copyright>
-        <Authors>Morten Maxild</Authors>
-        <Company>Morten Maxild</Company>
-        <PackageTags>maxfire prelude</PackageTags>
-        <!--
-        <PackageIconUrl>A URL for a 64x64 image with transparent background to use as the icon for the package in UI display.</PackageIconUrl>
-        <PackageReleaseNotes>Release notes for the package.</PackageReleaseNotes>
-        <PackageLicenseUrl>An URL to the license that is applicable to the package.</PackageLicenseUrl>
-        <PackageProjectUrl>An URL for the package's home page, often shown in UI displays as well as nuget.org.</PackageProjectUrl>
-        -->
-        <RepositoryRoot>$(MSBuildThisFileDirectory)</RepositoryRoot>
-        <!-- Publish the repository URL in the built .nupkg. in the following *.nuspec element -->
-        <!--         <repository type="git" url="https://github.com/maxild/Prelude" />         -->
-        <RepositoryUrl>https://github.com/maxild/Prelude</RepositoryUrl>
-        <RepositoryType>git</RepositoryType>
-    </PropertyGroup>
-
-    <!-- Common Assembly Information  -->
-    <ItemGroup Condition=" Exists('..\CommonAssemblyInfo.cs') and '$(IsPackable)' == 'true' ">
-        <Compile Include="..\CommonAssemblyInfo.cs" />
-    </ItemGroup>
-
-    <!-- SourceLink -->
-    <Choose>
-        <When Condition=" $(IsTestProject) != 'true' and '$(IsPackable)' != 'false' ">
-            <PropertyGroup>
-                <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
-                <!-- See also https://blog.nuget.org/20180827/Introducing-Source-Code-Link-for-NuGet-packages.html -->
-                <!-- <PublishRepositoryUrl>true</PublishRepositoryUrl> -->
-
-                <!-- Optional: Embed source files that are not tracked by the source control manager to the PDB (e.g. CommonAssemblyInfo.cs) -->
-                <!-- This is useful if you generate files during the build -->
-                <EmbedUntrackedSources>true</EmbedUntrackedSources>
-
-                <!-- Include the SourceLink'ed PDB in the built .nupkg because symbolsource.org does not support portable PDBs -->
-                <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
-            </PropertyGroup>
-            <ItemGroup>
-                <PackageReference Include="Microsoft.SourceLink.GitHub" Version="$(MicrosoftSourceLinkGitHubPackageVersion)" PrivateAssets="All" />
-            </ItemGroup>
-        </When>
-    </Choose>
+    <!-- When searching for a Directory.Build.props file, MSBuild walks the directory structure upwards from your project location  -->
+    <Import Project="..\Directory.Build.props" />
 
 </Project>

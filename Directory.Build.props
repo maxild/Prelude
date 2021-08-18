@@ -11,7 +11,7 @@
     </PropertyGroup>
 
     <!--
-        We enable annotations for all TFMs, but will only generate nullability warnings for new TFMs (i.e. netcoreapp3.1, net5.0)
+        We enable annotations for all TFMs, but will only generate nullability warnings for new TFMs (i.e. net5.0)
         We therefore suppress nullability warnings on old TFMs (but nullable annotation context is still created on old TFMs)
     -->
     <Choose>
@@ -43,18 +43,92 @@
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     </PropertyGroup>
 
-    <!-- Define .NET Core constants -->
-    <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-        <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
-        <DebugType>portable</DebugType>
+    <PropertyGroup>
+        <RepositoryRoot>$(MSBuildThisFileDirectory)</RepositoryRoot>
     </PropertyGroup>
-    <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.1' ">
-        <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
-        <DebugType>portable</DebugType>
+
+    <!--
+      Src Project Config
+    -->
+
+    <!-- NuGet metadata properties -->
+    <PropertyGroup Condition=" '$(IsPackable)' == 'true' ">
+      <Product>Maxfire Prelude Libraries</Product>
+      <PackageId>$(AssemblyName)</PackageId>
+      <Copyright>Copyright (c) Morten Maxild 2016.</Copyright>
+      <Authors>Morten Maxild</Authors>
+      <Company>Morten Maxild</Company>
+      <PackageTags>maxfire prelude</PackageTags>
+      <!--
+        <PackageIconUrl>A URL for a 64x64 image with transparent background to use as the icon for the package in UI display.</PackageIconUrl>
+        <PackageReleaseNotes>Release notes for the package.</PackageReleaseNotes>
+        <PackageLicenseUrl>An URL to the license that is applicable to the package.</PackageLicenseUrl>
+        <PackageProjectUrl>An URL for the package's home page, often shown in UI displays as well as nuget.org.</PackageProjectUrl>
+        -->
+      <!-- Publish the repository URL in the built .nupkg. in the following *.nuspec element -->
+      <!--         <repository type="git" url="https://github.com/maxild/Prelude" />         -->
+      <RepositoryUrl>https://github.com/maxild/Prelude</RepositoryUrl>
+      <RepositoryType>git</RepositoryType>
     </PropertyGroup>
-    <PropertyGroup Condition=" '$(TargetFramework)' == 'net5.0' ">
-        <DefineConstants>$(DefineConstants);NETCORE</DefineConstants>
-        <DebugType>portable</DebugType>
-    </PropertyGroup>
+
+    <!-- Common Assembly Information  -->
+    <ItemGroup Condition=" Exists('$(RepositoryRoot)src\CommonAssemblyInfo.cs') and '$(IsPackable)' == 'true' ">
+      <Compile Include="$(RepositoryRoot)src\CommonAssemblyInfo.cs" />
+    </ItemGroup>
+
+    <!-- SourceLink -->
+    <Choose>
+      <When Condition=" '$(IsPackable)' == 'true' ">
+        <PropertyGroup>
+          <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
+          <!-- See also https://blog.nuget.org/20180827/Introducing-Source-Code-Link-for-NuGet-packages.html -->
+          <!-- <PublishRepositoryUrl>true</PublishRepositoryUrl> -->
+
+          <!-- Optional: Embed source files that are not tracked by the source control manager to the PDB (e.g. CommonAssemblyInfo.cs) -->
+          <!-- This is useful if you generate files during the build -->
+          <EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+          <!-- Include the SourceLink'ed PDB in the built .nupkg because symbolsource.org does not support portable PDBs -->
+          <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+
+          <!-- Embed symbols containing Source Link in the main file (exe/dll) -->
+          <DebugType>embedded</DebugType>
+        </PropertyGroup>
+        <ItemGroup>
+          <PackageReference Include="Microsoft.SourceLink.GitHub" Version="$(MicrosoftSourceLinkGitHubPackageVersion)" PrivateAssets="All" />
+        </ItemGroup>
+      </When>
+    </Choose>
+
+    <!--
+      Test project config
+    -->
+
+    <!--
+        For .NET Core 2.1 SDK this is needed to build against net472 without installing mono
+        In .NET Core 3.x SDK the Microsoft.NETFramework.ReferenceAssemblies package is not needed any more
+        See also https://github.com/dotnet/designs/pull/33#issuecomment-498362109
+        NOTE: To build in Rider on Mac/Linux we need the reference assemblies.
+    -->
+    <ItemGroup Condition=" '$(IsTestProject)' == 'true' ">
+      <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" Version="$(MicrosoftNETFrameworkReferenceAssembliesPackageVersion)" />
+    </ItemGroup>
+
+    <ItemGroup Condition=" '$(IsTestProject)' == 'true' ">
+      <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(MicrosoftNETTestSdkPackageVersion)" />
+      <PackageReference Include="xunit" Version="$(XUnitPackageVersion)" />
+      <PackageReference Include="Shouldly" Version="$(ShouldlyPackageVersion)" />
+      <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitRunnerVisualStudioPackageVersion)">
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        <PrivateAssets>all</PrivateAssets>
+      </PackageReference>
+    </ItemGroup>
+
+    <!-- Mono support for dotnet-xunit (hack) -->
+    <ItemGroup Condition=" $(IsTestProject) == 'true' ">
+      <Content Include="..\xunit.runner.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
 
 </Project>
