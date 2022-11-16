@@ -24,12 +24,12 @@ namespace Maxfire.Prelude.ComponentModel
             return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
         }
 
-        public override bool CanConvertTo(ITypeDescriptorContext? context, Type destinationType)
+        public override bool CanConvertTo(ITypeDescriptorContext? context, Type? destinationType)
         {
             return destinationType == typeof(string) || base.CanConvertTo(context, destinationType);
         }
 
-        public override object ConvertFrom(ITypeDescriptorContext? context, CultureInfo culture,
+        public override object ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture,
             object? value)
         {
             return value switch
@@ -44,7 +44,7 @@ namespace Maxfire.Prelude.ComponentModel
         private object ConvertFromException(object? value) =>
             throw new NotSupportedException(GetConvertFromErrorMessage(value?.GetType().FullName));
 
-        public override object ConvertTo(ITypeDescriptorContext? context, CultureInfo culture, object? value,
+        public override object ConvertTo(ITypeDescriptorContext? context, CultureInfo? culture, object? value,
             Type destinationType)
         {
             // We keep this check, because then we do not depend
@@ -122,8 +122,8 @@ namespace Maxfire.Prelude.ComponentModel
         /// <returns>A <typeparamref name="T"/> value.</returns>
         /// <exception cref="FormatException">In case of any parse error(s).</exception>
         [return: NotNull]
-        protected abstract T Parse(string s, CultureInfo culture);
+        protected abstract T Parse(string s, CultureInfo? culture);
 
-        protected abstract string Stringify([DisallowNull] T value, CultureInfo culture);
+        protected abstract string Stringify([DisallowNull] T value, CultureInfo? culture);
     }
 }

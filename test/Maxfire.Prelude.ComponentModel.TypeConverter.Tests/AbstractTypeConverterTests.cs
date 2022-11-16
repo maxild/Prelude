@@ -16,14 +16,14 @@ namespace Maxfire.Prelude.ComponentModel.Tests
             {
             }
 
-            protected override DateTime Parse(string s, CultureInfo culture)
+            protected override DateTime Parse(string s, CultureInfo? culture)
             {
                 return !DateTime.TryParse(s, out DateTime result)
                     ? throw new FormatException(GetParseErrorMessage(s))
                     : result;
             }
 
-            protected override string Stringify(DateTime value, CultureInfo culture)
+            protected override string Stringify(DateTime value, CultureInfo? culture)
             {
                 return value.ToString("yyyy-MM-dd");
             }

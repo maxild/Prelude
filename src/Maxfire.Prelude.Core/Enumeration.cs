@@ -89,7 +89,7 @@ namespace Maxfire.Prelude
 
         static Func<IEnumerable<Enumeration>> GetFunc(Type enumerationType)
         {
-            // Call Enumeration.GetAll<TEnumeration> via runtime type reference using Expession API as a mini-compiler
+            // Call Enumeration.GetAll<TEnumeration> via runtime type reference using Expression API as a mini-compiler
             MethodInfo? method = typeof(Enumeration).GetRuntimeMethod(nameof(GetAll), Type.EmptyTypes);
             Debug.Assert(!(method is null));
             MethodInfo genericMethod = method.MakeGenericMethod(enumerationType);
@@ -168,6 +168,56 @@ namespace Maxfire.Prelude
             }
             return matchingItem;
         }
+
+#if NET
+        public static TEnumeration? FromNameOrDefault<TEnumeration>(ReadOnlySpan<char> name)
+            where TEnumeration : Enumeration<TEnumeration>
+        {
+            // Cannot use span (byref-like type) in lambda
+            // ReSharper disable once LoopCanBeConvertedToQuery
+            foreach (var item in GetAll<TEnumeration>())
+            {
+                if (name.Equals(item.Name, StringComparison.OrdinalIgnoreCase))
+                    return item;
+            }
+
+            return null;
+        }
+
+        public static Enumeration? FromNameOrDefault(Type enumerationType, ReadOnlySpan<char> name)
+        {
+            // Cannot use span (byref-like type) in lambda
+            // ReSharper disable once LoopCanBeConvertedToQuery
+            foreach (var item in GetAll(enumerationType))
+            {
+                if (name.Equals(item.Name, StringComparison.OrdinalIgnoreCase))
+                    return item;
+            }
+
+            return null;
+        }
+
+        public static TEnumeration FromName<TEnumeration>(ReadOnlySpan<char> name)
+            where TEnumeration : Enumeration<TEnumeration>
+        {
+            var matchingItem = FromNameOrDefault<TEnumeration>(name);
+            if (matchingItem is null)
+            {
+                throw new FormatException($"'{name}' is not a valid name for '{typeof(TEnumeration)}'.");
+            }
+            return matchingItem;
+        }
+
+        public static Enumeration FromName(Type enumerationType, ReadOnlySpan<char> name)
+        {
+            var matchingItem = FromNameOrDefault(enumerationType, name);
+            if (matchingItem is null)
+            {
+                throw new FormatException($"'{name}' is not a valid name for '{enumerationType}'.");
+            }
+            return matchingItem;
+        }
+#endif
     }
 
     [Serializable]
@@ -274,6 +324,7 @@ namespace Maxfire.Prelude
             {
                 "V" => Value.ToString(CultureInfo.InvariantCulture),
                 "T" => Text,
+                "N" => Name,
                 "G" => ToString(),
                 _ => throw new FormatException($"Unsupported format '{format}'")
             };
