@@ -297,17 +297,13 @@ namespace Maxfire.Prelude
             return !(other is null) && GetType() == other.GetType() && Value == other.Value;
         }
 
-        public override int GetHashCode()
-        {
-            return Value;
-        }
+        public override int GetHashCode() => Value;
 
-        public override string ToString()
-        {
-            return Name;
-        }
+        public override string ToString() => Name;
 
-        public string ToString(string? format, IFormatProvider? formatProvider)
+        public string ToString(string? format) => ToStringHelper(format ?? "G");
+
+        string IFormattable.ToString(string? format, IFormatProvider? formatProvider)
         {
             if (formatProvider?.GetFormat(GetType()) is ICustomFormatter fmt)
             {
