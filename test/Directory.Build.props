@@ -1,8 +1,5 @@
 <Project>
 
-    <!-- When searching for a Directory.Build.props file, MSBuild walks the directory structure upwards from your project location  -->
-    <Import Project="..\Directory.Build.props" />
-
     <PropertyGroup>
         <!--
         We run our tests on both Core and Desktop/Mono.
@@ -15,27 +12,9 @@
     </PropertyGroup>
 
     <!--
-        For .NET Core 2.1 SDK this is needed to build against net472 without installing mono
-        In .NET Core 3.x SDK the Microsoft.NETFramework.ReferenceAssemblies package is not needed any more
-        See also https://github.com/dotnet/designs/pull/33#issuecomment-498362109
-        NOTE: To build in Rider on Mac/Linux we need the reference assemblies.
+      When searching for a Directory.Build.props file, MSBuild walks the
+      directory structure upwards from your project location
     -->
-    <ItemGroup>
-        <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="All" Version="$(MicrosoftNETFrameworkReferenceAssembliesPackageVersion)" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(MicrosoftNETTestSdkPackageVersion)" />
-        <PackageReference Include="xunit" Version="$(XUnitPackageVersion)" />
-        <PackageReference Include="xunit.runner.visualstudio" Version="$(XUnitPackageVersion)" />
-        <PackageReference Include="Shouldly" Version="$(ShouldlyPackageVersion)" />
-    </ItemGroup>
-
-    <!-- Mono support for dotnet-xunit (hack) -->
-    <ItemGroup Condition=" $(IsTestProject) == 'true' ">
-        <Content Include="..\xunit.runner.json">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
-    </ItemGroup>
+    <Import Project="..\Directory.Build.props" />
 
 </Project>

@@ -7,7 +7,6 @@ using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Maxfire.Prelude.ComponentModel;
-using Maxfire.Prelude.Linq;
 
 namespace Maxfire.Prelude
 {
@@ -153,12 +152,19 @@ namespace Maxfire.Prelude
             return _unspecifiedDate;
         }
 
-        public static Date Parse(string s)
-        {
-            return Parse(s, DateFormat.Default);
-        }
+        public static Date Parse(string s) => ParseHelper(s, DateFormat.Default);
 
-        public static Date Parse(string s, DateFormat dateFormat)
+        public static Date Parse(string s, DateFormat dateFormat) => ParseHelper(s, dateFormat);
+
+#if NET
+        public static Date Parse(ReadOnlySpan<char> s) => ParseHelper(s, DateFormat.Default);
+
+        public static Date Parse(ReadOnlySpan<char> s, DateFormat dateFormat) => ParseHelper(s, dateFormat);
+
+        private static Date ParseHelper(ReadOnlySpan<char> s, DateFormat dateFormat)
+#else
+        private static Date ParseHelper(string s, DateFormat dateFormat)
+#endif
         {
             DateFormat dateFormatToUse = ResolveDateFormatForParsing(dateFormat);
             // This can be either Unspecified, Local or Utc (depending on time zone indicator)
@@ -172,12 +178,19 @@ namespace Maxfire.Prelude
             return new Date(dateTime);
         }
 
-        public static Date? TryParse(string? s)
-        {
-            return TryParse(s, DateFormat.Default);
-        }
+        public static Date? TryParse(string? s) => TryParseHelper(s, DateFormat.Default);
 
-        public static Date? TryParse(string? s, DateFormat dateFormat)
+        public static Date? TryParse(string? s, DateFormat dateFormat) => TryParseHelper(s, dateFormat);
+
+#if NET
+        public static Date? TryParse(ReadOnlySpan<char> s) => TryParseHelper(s, DateFormat.Default);
+
+        public static Date? TryParse(ReadOnlySpan<char> s, DateFormat dateFormat) => TryParseHelper(s, dateFormat);
+
+        private static Date? TryParseHelper(ReadOnlySpan<char> s, DateFormat dateFormat)
+#else
+        private static Date? TryParseHelper(string? s, DateFormat dateFormat)
+#endif
         {
             DateFormat dateFormatToUse = ResolveDateFormatForParsing(dateFormat);
 
@@ -285,9 +298,7 @@ namespace Maxfire.Prelude
             int sign = 1;
             if (d1 > d2)
             {
-                Date tmp = d1;
-                d1 = d2;
-                d2 = tmp;
+                (d1, d2) = (d2, d1);
                 sign = -1;
             }
 
@@ -346,12 +357,17 @@ namespace Maxfire.Prelude
             return _unspecifiedDate.ToString(dateFormat.Format, dateFormat.Culture);
         }
 
-        string IFormattable.ToString(string? format, IFormatProvider? formatProvider)
+        public string ToString(string format) => ToStringHelper(format, DateFormat.Default.Culture);
+
+        string IFormattable.ToString(string? format, IFormatProvider? formatProvider) =>
+            ToStringHelper(format, formatProvider);
+
+        private string ToStringHelper(string? format, IFormatProvider? formatProvider)
         {
             if (format is null || format == "G")
                 return ToString();
 
-            if (Enumeration.GetAll<DateFormat>().Map(x => x.Format).Any(f => f == format))
+            if (Enumeration.GetAll<DateFormat>().Any(f => f.Format.Equals(format, StringComparison.Ordinal)))
             {
                 return formatProvider is null
                     ? _unspecifiedDate.ToString(format)
@@ -361,7 +377,7 @@ namespace Maxfire.Prelude
             throw new FormatException("Unknown format: " + format);
         }
 
-        public override bool Equals(object? obj)
+        public override bool Equals([NotNullWhen(true)] object? obj)
         {
             if (obj is null)
             {
