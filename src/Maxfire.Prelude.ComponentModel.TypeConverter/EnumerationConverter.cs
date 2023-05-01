@@ -17,7 +17,7 @@ namespace Maxfire.Prelude.ComponentModel
             _convertToString = converter;
         }
 
-        protected override TEnumeration Parse(string s, CultureInfo culture)
+        protected override TEnumeration Parse(string s, CultureInfo? culture)
         {
             TEnumeration? result = int.TryParse(s, out var val) ?
                 Enumeration.FromValueOrDefault<TEnumeration>(val) :
@@ -26,7 +26,7 @@ namespace Maxfire.Prelude.ComponentModel
             return result ?? throw new FormatException(GetParseErrorMessage(s));
         }
 
-        protected override string Stringify(TEnumeration value, CultureInfo culture)
+        protected override string Stringify(TEnumeration value, CultureInfo? culture)
         {
             return _convertToString is null ? value.Name : _convertToString(value);
         }

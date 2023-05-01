@@ -91,11 +91,16 @@ echo ".NET Core SDK version ${DOTNET_VERSION} is required (with roll forward to 
 read -r major minor feature patch < <(parse_sdk_version "$DOTNET_VERSION")
 read -r foundMajor foundMinor foundFeature foundPatch < <(parse_sdk_version "$DOTNET_INSTALLED_VERSION")
 
-# latestPatch roll forward policy
+# BUG: When trying to parse 6.0.408 (the installed version)
+#      The shell tries to interpret 08 as an octal number, as it starts with a zero.
+#      Only digits 0-7 are, however, allowed in octal, as decimal 8 is octal 010. Hence 08 is not a valid number, and that's the reason for the error.
+# SOLUTION: https://stackoverflow.com/questions/12821715/convert-string-into-integer-in-bash-script-leading-zero-number-error/12821845#12821845
+
+# latestPatch roll forward policy (patch part: remove the leading zero by parameter expansion: ${var#0})
 if [[ "$foundMajor" != "$major" ]] || \
    [[ "$foundMinor" != "$minor" ]] || \
    [[ "$foundFeature" != "$feature" ]] || \
-   [[ "$foundPatch" -lt "$patch" ]]; then
+   [[ "${foundPatch#0}" -lt "${patch#0}" ]]; then
 
   echo "Installing .NET Core SDK version ${DOTNET_VERSION} ..."
   if [ ! -d "$SCRIPT_DIR/.dotnet" ]; then

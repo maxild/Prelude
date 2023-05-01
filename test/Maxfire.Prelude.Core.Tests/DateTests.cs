@@ -93,7 +93,7 @@ namespace Maxfire.Prelude.Tests
         public void DateTypeConverter_ConvertFrom_ThrowsFormatExceptionIfValueIsNull()
         {
             TypeConverter converter = TypeDescriptor.GetConverter(typeof(Date));
-            Assert.Throws<NotSupportedException>(() => converter.ConvertFrom(value: null))
+            Assert.Throws<NotSupportedException>(() => converter.ConvertFrom(value: null!))
                 .Message.ShouldBe("DateTypeConverter cannot convert from (null).");
         }
 

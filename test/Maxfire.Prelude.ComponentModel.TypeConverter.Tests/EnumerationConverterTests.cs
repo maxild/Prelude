@@ -104,7 +104,7 @@ namespace Maxfire.Prelude.ComponentModel.Tests
         [Fact]
         public void ConvertFromNull_ThrowsNotSupported()
         {
-            Assert.Throws<NotSupportedException>(() => Sut.ConvertFrom(value: null))
+            Assert.Throws<NotSupportedException>(() => Sut.ConvertFrom(value: null!))
                 .Message.ShouldBe("EnumerationConverter<BooleanEnumeration> cannot convert from (null).");
         }
 
