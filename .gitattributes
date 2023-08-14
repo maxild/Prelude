@@ -6,7 +6,7 @@
 *.sh text eol=lf
 *.nix text eol=lf
 build.config text eol=lf
-
+tools/nuget.exe binary
 ###############################################################################
 # Set default behavior for command prompt diff.
 #
@@ -15,7 +15,6 @@ build.config text eol=lf
 # Note: This is only used by command line
 ###############################################################################
 *.cs     diff=csharp text
-
 ###############################################################################
 # Set the merge driver for project and solution files
 #
@@ -38,7 +37,6 @@ build.config text eol=lf
 #*.modelproj merge=binary
 #*.sqlproj   merge=binary
 #*.wwaproj   merge=binary
-
 ###############################################################################
 # behavior for image files
 #
@@ -47,7 +45,6 @@ build.config text eol=lf
 #*.jpg   binary
 #*.png   binary
 #*.gif   binary
-
 ###############################################################################
 # diff behavior for common document formats
 #
@@ -65,3 +62,4 @@ build.config text eol=lf
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+*.xls* filter=lfs diff=lfs merge=lfs -text
