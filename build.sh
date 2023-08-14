@@ -136,7 +136,7 @@ function install_tool() {
       fi
     fi
 
-    if ! dotnet tool install --tool-path "$TOOLS_DIR" --version "$version" --configfile NuGet.public.config "$packageId" >/dev/null 2>&1; then
+    if ! dotnet tool install --tool-path "$TOOLS_DIR" --version "$version" "$packageId" >/dev/null 2>&1; then
       error_exit "Failed to install ${packageId}"
     fi
 
@@ -159,10 +159,10 @@ if [ ! -d "$TOOLS_DIR/Maxfire.CakeScripts" ]; then
   # latest or empty string is interpreted as 'just use the latest' (floating version, not determinsitic)
   if [[ $CAKESCRIPTS_VERSION == "latest" ]] || [[ -z "$CAKESCRIPTS_VERSION" ]]; then
     mono tools/nuget.exe install Maxfire.CakeScripts -ExcludeVersion -Prerelease \
-         -OutputDirectory "$TOOLS_DIR" -Source 'https://api.nuget.org/v3/index.json;https://www.myget.org/F/maxfire/api/v3/index.json' >/dev/null 2>&1
+         -OutputDirectory "$TOOLS_DIR" -Source 'https://nuget.pkg.github.com/maxild/index.json' >/dev/null 2>&1
   else
     mono tools/nuget.exe install Maxfire.CakeScripts -Version "$CAKESCRIPTS_VERSION" -ExcludeVersion -Prerelease \
-         -OutputDirectory "$TOOLS_DIR" -Source 'https://api.nuget.org/v3/index.json;https://www.myget.org/F/maxfire/api/v3/index.json' >/dev/null 2>&1
+         -OutputDirectory "$TOOLS_DIR" -Source 'https://nuget.pkg.github.com/maxild/index.json' >/dev/null 2>&1
   fi
 
   # shellcheck disable=SC2181
@@ -182,7 +182,7 @@ else
   if [[ "$CAKESCRIPTS_VERSION" != "$CAKESCRIPTS_INSTALLED_VERSION" ]]; then
     echo "Upgrading to version $CAKESCRIPTS_VERSION of Maxfire.CakeScripts..."
     mono tools/nuget.exe install Maxfire.CakeScripts -Version "$CAKESCRIPTS_VERSION" -ExcludeVersion -Prerelease \
-         -OutputDirectory "$TOOLS_DIR" -Source 'https://api.nuget.org/v3/index.json;https://www.myget.org/F/maxfire/api/v3/index.json' >/dev/null 2>&1
+         -OutputDirectory "$TOOLS_DIR" -Source 'https://nuget.pkg.github.com/maxild/index.json' >/dev/null 2>&1
   fi
 fi
 

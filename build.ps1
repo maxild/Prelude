@@ -131,7 +131,6 @@ function ParseSdkVersion([string]$version) {
 
 $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE = 1 # Caching packages on a temporary build machine is a waste of time.
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = 1       # opt out of telemetry
-$env:DOTNET_ROLL_FORWARD = "Major"
 
 $DotNetChannel = 'LTS'
 
@@ -202,11 +201,11 @@ if (-not (Test-Path (Join-Path $TOOLS_DIR 'Maxfire.CakeScripts'))) {
   # latest or empty string is interpreted as 'just use the latest' (floating version, not determinsitic)
   if ( ($CakeScriptsVersion -eq "latest") -or [string]::IsNullOrWhitespace($CakeScriptsVersion) ) {
     & $NUGET_EXE install Maxfire.CakeScripts -ExcludeVersion -Prerelease `
-      -OutputDirectory `"$TOOLS_DIR`" -Source 'https://api.nuget.org/v3/index.json;https://www.myget.org/F/maxfire/api/v3/index.json' | Out-Null
+      -OutputDirectory "$TOOLS_DIR" -Source 'https://nuget.pkg.github.com/maxild/index.json' | Out-Null
   }
   else {
     & $NUGET_EXE install Maxfire.CakeScripts -Version $CakeScriptsVersion -ExcludeVersion -Prerelease `
-      -OutputDirectory `"$TOOLS_DIR`" -Source 'https://api.nuget.org/v3/index.json;https://www.myget.org/F/maxfire/api/v3/index.json' | Out-Null
+      -OutputDirectory "$TOOLS_DIR" -Source 'https://nuget.pkg.github.com/maxild/index.json' | Out-Null
   }
 
   if ($LASTEXITCODE -ne 0) {
@@ -227,7 +226,7 @@ else {
     $NUGET_EXE = Join-Path $TOOLS_DIR 'nuget.exe'
     Write-Host "Upgrading to version $CakeScriptsVersion of Maxfire.CakeScripts..."
     & $NUGET_EXE install Maxfire.CakeScripts -Version $CakeScriptsVersion -ExcludeVersion -Prerelease `
-      -OutputDirectory `"$TOOLS_DIR`" -Source 'https://api.nuget.org/v3/index.json;https://www.myget.org/F/maxfire/api/v3/index.json' | Out-Null
+      -OutputDirectory "$TOOLS_DIR" -Source 'https://nuget.pkg.github.com/maxild/index.json' | Out-Null
   }
 }
 
@@ -257,7 +256,7 @@ Function Install-NetCoreTool {
       & dotnet tool uninstall --tool-path $TOOLS_DIR $PackageId | Out-Null
     }
 
-    & dotnet tool install --tool-path $TOOLS_DIR --version $Version --configfile NuGet.public.config $PackageId | Out-Null
+    & dotnet tool install --tool-path $TOOLS_DIR --version $Version $PackageId | Out-Null
     if ($LASTEXITCODE -ne 0) {
       "Failed to install $PackageId"
       exit $LASTEXITCODE
