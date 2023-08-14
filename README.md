@@ -1,14 +1,17 @@
 # Prelude
 
-The Prelude repository contains extensions to the .NET Framework (`netstandard2.0`) and .NET 5 (`net5.0`) used by several projects written by Morten Maxild.
+The Prelude repository contains extensions to the .NET Framework (`netstandard2.0`) and .NET 6 (`net6.0`) used by several projects written by Morten Maxild.
 
-You need .NET SDK 5.0.100 to build. You also need vs2019 16.8+ or Rider 2020.3+ to work with C# 9.
+## Build Status
 
-The Prelude packages (libraries) are build with SourceLink support.
 
-AppVeyor: [![Build Status](https://ci.appveyor.com/api/projects/status/kkcqonha77p6dj2l?svg=true)](https://ci.appveyor.com/project/maxild/prelude)
+| Build server                | Platform         | Branch       | Build status                                                                                                                                                        |
+|-----------------------------|------------------|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| AppVeyor                    | Windows          | Any branch   | [![Current Status](https://ci.appveyor.com/api/projects/status/kkcqonha77p6dj2l?svg=true)](https://ci.appveyor.com/project/maxild/prelude)
+| AppVeyor                    | Windows          | `dev` branch | [![Dev branch status](https://ci.appveyor.com/api/projects/status/kkcqonha77p6dj2l/branch/dev?svg=true)](https://ci.appveyor.com/project/maxild/prelude/branch/dev) |
+| GitHub Actions              | Windows / Linux  | `dev` branch | [![Dev branch status](https://github.com/maxild/Prelude/actions/workflows/main.yml/badge.svg?branch=dev)](https://github.com/maxild/Prelude/actions)                    |
 
-Travis: [![Build Status](https://travis-ci.org/maxild/Prelude.svg)](https://travis-ci.org/maxild/Prelude)
+
 
 ## Get Packages
 

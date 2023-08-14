@@ -1,6 +1,8 @@
-image: Visual Studio 2019
+image: Visual Studio 2022
 
 environment:
+  # Needed for GitVersion to work better
+  IGNORE_NORMALISATION_GIT_HEAD_MOVE: 1
   # 'appveyor build2' token
   GITHUB_ACCESS_TOKEN:
     secure: f6XWOyfjFS+fTkPWNoR2GbqOhhbu6KTbQdz0o+0yozD1DRA0XIci5xNJDDTtFUu1
@@ -12,11 +14,26 @@ environment:
     secure: sodorJrPlumQEGdwwRYZ9E/+5Me1KiEessgorKXYchcSIY12v9TEF49jm2oe0ATn
 
 init:
-  - git config --global core.autocrlf input
+  - git config --global core.autocrlf true
+
+install:
+  - dotnet --info
+  # The last part will make CMD ignore any non-zero exit codes from 'dotnet --version'
+  - dotnet --version & exit 0
+
+before_build:
+  - ps: Write-Host "All git branches are $(git branch --all)"
+  - ps: Write-Host "The current GIT branch is $(git rev-parse --abbrev-ref HEAD)"
 
 build_script:
-  - ps: .\build.ps1 -target AppVeyor -configuration Debug -verbosity diagnostic
-  - ps: .\build.ps1 -target AppVeyor -configuration Release -verbosity diagnostic
+  - git status
+  - ps: echo "IGNORE_NORMALISATION_GIT_HEAD_MOVE = ${env:IGNORE_NORMALISATION_GIT_HEAD_MOVE}"
+  - ps: .\build.ps1 -verbose -target AppVeyor -configuration Debug -verbosity diagnostic
+  - ps: .\build.ps1 -verbose -target AppVeyor -configuration Release -verbosity diagnostic
+
+after_build:
+  - ps: Write-Host "All git branches are $(git branch --all)"
+  - ps: Write-Host "The current GIT branch is $(git rev-parse --abbrev-ref HEAD)"
 
 test: off
 

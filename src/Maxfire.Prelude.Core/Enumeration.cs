@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -88,7 +89,7 @@ namespace Maxfire.Prelude
 
         static Func<IEnumerable<Enumeration>> GetFunc(Type enumerationType)
         {
-            // Call Enumeration.GetAll<TEnumeration> via runtime type reference using Expession API as a mini-compiler
+            // Call Enumeration.GetAll<TEnumeration> via runtime type reference using Expression API as a mini-compiler
             MethodInfo? method = typeof(Enumeration).GetRuntimeMethod(nameof(GetAll), Type.EmptyTypes);
             Debug.Assert(!(method is null));
             MethodInfo genericMethod = method.MakeGenericMethod(enumerationType);
@@ -167,6 +168,56 @@ namespace Maxfire.Prelude
             }
             return matchingItem;
         }
+
+#if NET
+        public static TEnumeration? FromNameOrDefault<TEnumeration>(ReadOnlySpan<char> name)
+            where TEnumeration : Enumeration<TEnumeration>
+        {
+            // Cannot use span (byref-like type) in lambda
+            // ReSharper disable once LoopCanBeConvertedToQuery
+            foreach (var item in GetAll<TEnumeration>())
+            {
+                if (name.Equals(item.Name, StringComparison.OrdinalIgnoreCase))
+                    return item;
+            }
+
+            return null;
+        }
+
+        public static Enumeration? FromNameOrDefault(Type enumerationType, ReadOnlySpan<char> name)
+        {
+            // Cannot use span (byref-like type) in lambda
+            // ReSharper disable once LoopCanBeConvertedToQuery
+            foreach (var item in GetAll(enumerationType))
+            {
+                if (name.Equals(item.Name, StringComparison.OrdinalIgnoreCase))
+                    return item;
+            }
+
+            return null;
+        }
+
+        public static TEnumeration FromName<TEnumeration>(ReadOnlySpan<char> name)
+            where TEnumeration : Enumeration<TEnumeration>
+        {
+            var matchingItem = FromNameOrDefault<TEnumeration>(name);
+            if (matchingItem is null)
+            {
+                throw new FormatException($"'{name}' is not a valid name for '{typeof(TEnumeration)}'.");
+            }
+            return matchingItem;
+        }
+
+        public static Enumeration FromName(Type enumerationType, ReadOnlySpan<char> name)
+        {
+            var matchingItem = FromNameOrDefault(enumerationType, name);
+            if (matchingItem is null)
+            {
+                throw new FormatException($"'{name}' is not a valid name for '{enumerationType}'.");
+            }
+            return matchingItem;
+        }
+#endif
     }
 
     [Serializable]
@@ -235,28 +286,24 @@ namespace Maxfire.Prelude
             return Value.CompareTo(other.Value);
         }
 
-        public override bool Equals(object? obj)
+        public override bool Equals([NotNullWhen(true)] object? obj)
         {
             return !(obj is null) && GetType() == obj.GetType() && Value == ((TEnumeration) obj).Value;
         }
 
-        public virtual bool Equals(TEnumeration? other)
+        public virtual bool Equals([NotNullWhen(true)] TEnumeration? other)
         {
             // even here we test for type equality, because the derived classes can (in theory) be based on deep inheritance chains
             return !(other is null) && GetType() == other.GetType() && Value == other.Value;
         }
 
-        public override int GetHashCode()
-        {
-            return Value;
-        }
+        public override int GetHashCode() => Value;
 
-        public override string ToString()
-        {
-            return Name;
-        }
+        public override string ToString() => Name;
 
-        public string ToString(string? format, IFormatProvider? formatProvider)
+        public string ToString(string? format) => ToStringHelper(format ?? "G");
+
+        string IFormattable.ToString(string? format, IFormatProvider? formatProvider)
         {
             if (formatProvider?.GetFormat(GetType()) is ICustomFormatter fmt)
             {
@@ -273,6 +320,7 @@ namespace Maxfire.Prelude
             {
                 "V" => Value.ToString(CultureInfo.InvariantCulture),
                 "T" => Text,
+                "N" => Name,
                 "G" => ToString(),
                 _ => throw new FormatException($"Unsupported format '{format}'")
             };

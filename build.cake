@@ -18,7 +18,7 @@ var parameters = CakeScripts.GetParameters(
         DeployToProdFeedUrl = "https://www.nuget.org/api/v2/package"             // NuGet.org feed url
     });
 bool publishingError = false;
-DotNetCoreMSBuildSettings msBuildSettings = null;
+DotNetMSBuildSettings msBuildSettings = null;
 
 ///////////////////////////////////////////////////////////////////////////////
 // SETUP / TEARDOWN
@@ -32,7 +32,7 @@ Setup(context =>
         context.Log.Verbosity = Verbosity.Diagnostic;
     }
 
-    msBuildSettings = new DotNetCoreMSBuildSettings()
+    msBuildSettings = new DotNetMSBuildSettings()
                         .WithProperty("RepositoryBranch", parameters.Git.Branch)        // gitflow branch
                         .WithProperty("RepositoryCommit", parameters.Git.Sha)           // full sha
                         //.WithProperty("Version", parameters.VersionInfo.SemVer)       // semver 2.0 compatible
@@ -89,12 +89,18 @@ Task("Clean")
 Task("Restore")
     .Does(() =>
 {
-    DotNetCoreRestore(parameters.Paths.Files.Solution.FullPath, new DotNetCoreRestoreSettings
+    var settings = new DotNetRestoreSettings
     {
-        Verbosity = DotNetCoreVerbosity.Minimal,
-        ConfigFile = "./NuGet.config",
-        MSBuildSettings = msBuildSettings
-    });
+        Verbosity = DotNetVerbosity.Minimal
+    };
+    if (parameters.IsLocalBuild)
+    {
+        // Unable to load the service index for source https://www.myget.org/F/brf/api/v3/index.json,
+        // or whatever. Give me a chance to store PAT in credential provider store.
+        settings.Interactive = true;
+    }
+
+    DotNetRestore(parameters.Paths.Files.Solution.FullPath, settings);
 });
 
 Task("Build")
@@ -102,7 +108,7 @@ Task("Build")
     .IsDependentOn("Restore")
     .Does(() =>
 {
-    DotNetCoreBuild(parameters.Paths.Files.Solution.FullPath, new DotNetCoreBuildSettings()
+    DotNetBuild(parameters.Paths.Files.Solution.FullPath, new DotNetBuildSettings()
     {
         Configuration = parameters.Configuration,
         NoRestore = true,
@@ -114,29 +120,24 @@ Task("Test")
     .IsDependentOn("Build")
     .Does(() =>
 {
-    var testProjects = GetFiles($"./{parameters.Paths.Directories.Test}/**/*.csproj");
-    foreach(var project in testProjects)
+    // Only testable projects (<IsTestProject>true</IsTestProject>) will be test-executed
+    // We do not need to exclude everything under 'src/submodules',
+    // because we use the single master solution
+    DotNetTest(parameters.Paths.Files.Solution.FullPath, new DotNetTestSettings
     {
-        foreach (var tfm in new [] {"net472", "netcoreapp3.1", "net5.0"})
-        {
-            DotNetCoreTest(project.ToString(), new DotNetCoreTestSettings
-            {
-                Framework = tfm,
-                NoBuild = true,
-                NoRestore = true,
-                Configuration = parameters.Configuration
-            });
-        }
+        NoBuild = true,
+        NoRestore = true,
+        Configuration = parameters.Configuration
+    });
 
-        // NOTE: .NET Framework / Mono (net472 on *nix and Mac OSX)
-        // ========================================================
-        // Microsoft does not officially support Mono via .NET Core SDK. Their support for .NET Core
-        // on Linux and OS X starts and ends with .NET Core. Anyway we test on Mono for now, and maybe
-        // remove Mono support soon.
-        //
-        // For Mono to support dotnet-xunit we have to put { "appDomain": "denied" } in config
-        // See https://github.com/xunit/xunit/issues/1357#issuecomment-314416426
-    }
+    // NOTE: .NET Framework / Mono (net472 on *nix and Mac OSX)
+    // ========================================================
+    // Microsoft does not officially support Mono via .NET Core SDK. Their support for .NET Core
+    // on Linux and OS X starts and ends with .NET Core. Anyway we test on Mono for now, and maybe
+    // remove Mono support soon.
+    //
+    // For Mono to support dotnet-xunit we have to put { "appDomain": "denied" } in config
+    // See https://github.com/xunit/xunit/issues/1357#issuecomment-314416426
 });
 
 Task("Package")
@@ -148,7 +149,8 @@ Task("Package")
     var projects = GetFiles($"{parameters.Paths.Directories.Src}/**/*.csproj");
     foreach(var project in projects)
     {
-        DotNetCorePack(project.FullPath, new DotNetCorePackSettings {
+        DotNetPack(project.FullPath, new DotNetPackSettings
+        {
             Configuration = parameters.Configuration,
             OutputDirectory = parameters.Paths.Directories.Artifacts,
             NoBuild = true,

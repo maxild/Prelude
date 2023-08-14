@@ -24,18 +24,42 @@
 # or for all commits on a particular branch
 #      git rev-list branch ^master --count
 # Also read https://github.com/GitTools/GitVersion/issues/889
+#
+# see also https://gitversion.net/docs/reference/configuration
 assembly-versioning-scheme: None
 mode: ContinuousDeployment
-next-version: 0.5.0 # TODO: Bug i GitVersion mht. feature branches
+next-version: 0.6.0 # TODO: Bug i GitVersion mht. feature branches
 legacy-semver-padding: 4
 build-metadata-padding: 4
 commits-since-version-source-padding: 4
 commit-message-incrementing: Enabled
 branches:
+  # Planned work
   feature:
-    regex: features?[/-]
+    regex: ^features?\/
     mode: ContinuousDelivery
-    tag: a.{BranchName}
+    tag: a-{BranchName}
+    increment: Inherit
+    prevent-increment-of-merged-branch-version: false
+    track-merge-target: false
+    tracks-release-branches: false
+    is-release-branch: false
+    is-mainline: false
+  topic:
+    # ^ -- starts with
+    # (?!dev) -- Negative Lookahead
+    # .* - matches any character between zero and unlimited times
+    #
+    # This is the old regex (used by Lofus etc for years)
+    # regex: ^features?\/
+    # This is the new regex that matches everything, but all the other patterns
+    # NOTE: You can test the regex at: https://www.regextester.com/
+    regex: ^((?!dev$)(?!master$)((?!features?\/)(?!support\/)(?!releases?\/)(?!hotfix(es)?\/).*))
+    mode: ContinuousDelivery
+    tag: a-{BranchName}
+    # tag: useBranchName
+    is-source-branch-for: ['main', 'develop', 'feature', 'hotfix', 'support']
+    source-branches: [ 'develop', 'main', 'release', 'feature', 'support', 'hotfix' ]
     increment: Inherit
     prevent-increment-of-merged-branch-version: false
     track-merge-target: false
@@ -43,7 +67,7 @@ branches:
     is-release-branch: false
     is-mainline: false
   develop:
-    regex: dev(elop)?(ment)?$
+    regex: ^dev$
     mode: ContinuousDeployment
     tag: dev
     increment: Minor
@@ -52,13 +76,8 @@ branches:
     tracks-release-branches: true
     is-release-branch: false
     is-mainline: false
-  # pull requests are not important, because we use a shared/centralized upstream repo and
-  # base all our work of supporting feature/xxx, release/x.y.z and hotfix/x.y.z branches.
-  # We have in fact turned off app veyor ci builds for pull requests in the github web hook
-  # config for the same reason, because app veyor have all ready build the supporting centralized
-  # branch.
   release:
-    regex: releases?[/-]
+    regex: ^releases?\/
     mode: ContinuousDelivery
     tag: rc
     increment: Patch
@@ -67,8 +86,31 @@ branches:
     tracks-release-branches: false
     is-release-branch: true
     is-mainline: false
-  master:
-    regex: master
+  # Unplanned work
+  hotfix:
+    regex: ^hotfix(es)?\/
+    mode: ContinuousDelivery
+    tag: rc
+    increment: Patch
+    prevent-increment-of-merged-branch-version: false
+    track-merge-target: false
+    tracks-release-branches: false
+    is-release-branch: false
+    is-mainline: false
+  # Release line (support/latest)
+  main:
+    regex: ^master$|^main$
+    mode: ContinuousDelivery
+    tag: ''
+    increment: Patch
+    prevent-increment-of-merged-branch-version: true
+    track-merge-target: false
+    tracks-release-branches: false
+    is-release-branch: false
+    is-mainline: true
+  # Release line (support/0.4.x)
+  support:
+    regex: ^support\/
     mode: ContinuousDelivery
     tag:
     increment: Patch
@@ -77,13 +119,3 @@ branches:
     tracks-release-branches: false
     is-release-branch: false
     is-mainline: true
-  hotfix:
-    regex: hotfix(es)?[/-]
-    mode: ContinuousDelivery
-    tag: rc
-    increment: Patch
-    prevent-increment-of-merged-branch-version: true
-    track-merge-target: false
-    tracks-release-branches: false
-    is-release-branch: false
-    is-mainline: false
