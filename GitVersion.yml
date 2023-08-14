@@ -28,7 +28,7 @@
 # see also https://gitversion.net/docs/reference/configuration
 assembly-versioning-scheme: None
 mode: ContinuousDeployment
-next-version: 0.6.0 # TODO: Bug i GitVersion mht. feature branches
+next-version: 0.7.0 # TODO: Bug i GitVersion mht. feature branches
 legacy-semver-padding: 4
 build-metadata-padding: 4
 commits-since-version-source-padding: 4
