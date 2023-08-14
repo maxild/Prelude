@@ -5,6 +5,7 @@ issue-labels-include:
   - feature
   - optimization
   - breaking
+  - api-move
 issue-labels-exclude:
   - help wanted
   - question
