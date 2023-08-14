@@ -11,7 +11,7 @@ environment:
     secure: EOVLFyiHRhh9Jij3/mITdSV5JH1SzT8JUbqqTIFtvOPndNeMme3mME01ws3+5nFB
   # NuGet.org apikey
   DEPLOYMENT_API_KEY:
-    secure: sodorJrPlumQEGdwwRYZ9E/+5Me1KiEessgorKXYchcSIY12v9TEF49jm2oe0ATn
+    secure: kiihplCA2tHVSB6tB1ryE/5aS0mSDevfQDjtWwRIrGqNWFOTMUXDZMI9UF3tJs8g
 
 init:
   - git config --global core.autocrlf true
