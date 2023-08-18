@@ -197,6 +197,7 @@ if (($ParsedFoundDotNetSdkVersion.Major -ne $ParsedDotNetSdkVersion.Major) -or `
 ###########################################################################
 
 if (-not (Test-Path (Join-Path $TOOLS_DIR 'Maxfire.CakeScripts'))) {
+  Write-Host "Installing version $CakeScriptsVersion of Maxfire.CakeScripts..."
   $NUGET_EXE = Join-Path $TOOLS_DIR 'nuget.exe'
   # latest or empty string is interpreted as 'just use the latest' (floating version, not determinsitic)
   if ( ($CakeScriptsVersion -eq "latest") -or [string]::IsNullOrWhitespace($CakeScriptsVersion) ) {
@@ -207,9 +208,8 @@ if (-not (Test-Path (Join-Path $TOOLS_DIR 'Maxfire.CakeScripts'))) {
     & $NUGET_EXE install Maxfire.CakeScripts -Version $CakeScriptsVersion -ExcludeVersion -Prerelease `
       -OutputDirectory "$TOOLS_DIR" -Source 'https://nuget.pkg.github.com/maxild/index.json' | Out-Null
   }
-
   if ($LASTEXITCODE -ne 0) {
-    Throw "An error occured while restoring Maxfire.CakeScripts."
+    Throw "Failed to install Maxfire.CakeScripts."
   }
 }
 else {
@@ -227,6 +227,9 @@ else {
     Write-Host "Upgrading to version $CakeScriptsVersion of Maxfire.CakeScripts..."
     & $NUGET_EXE install Maxfire.CakeScripts -Version $CakeScriptsVersion -ExcludeVersion -Prerelease `
       -OutputDirectory "$TOOLS_DIR" -Source 'https://nuget.pkg.github.com/maxild/index.json' | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+      Throw "Failed to install Maxfire.CakeScripts."
+    }
   }
 }
 
