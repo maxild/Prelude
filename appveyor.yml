@@ -12,6 +12,9 @@ environment:
   # NuGet.org apikey
   DEPLOYMENT_API_KEY:
     secure: kiihplCA2tHVSB6tB1ryE/5aS0mSDevfQDjtWwRIrGqNWFOTMUXDZMI9UF3tJs8g
+  # 'packages_pat_public' PAT (classic)
+  GITHUB_TOKEN:
+    secure: ESUR8UUfZGeT7sNRirn7b3q1TlUrivATlUpdIlpa2iuf86oKj47cBWPowG3nJP8w
 
 init:
   - git config --global core.autocrlf true
@@ -22,18 +25,12 @@ install:
   - dotnet --version & exit 0
 
 before_build:
-  - ps: Write-Host "All git branches are $(git branch --all)"
-  - ps: Write-Host "The current GIT branch is $(git rev-parse --abbrev-ref HEAD)"
+  # GitHub does not yet support anonymous access to public NuGet repositories.
+  - ps: dotnet nuget add source "https://nuget.pkg.github.com/maxild/index.json" --username maxild --password $env:GITHUB_TOKEN --store-password-in-clear-text --name github-maxild
 
 build_script:
-  - git status
-  - ps: echo "IGNORE_NORMALISATION_GIT_HEAD_MOVE = ${env:IGNORE_NORMALISATION_GIT_HEAD_MOVE}"
   - ps: .\build.ps1 -verbose -target AppVeyor -configuration Debug -verbosity diagnostic
   - ps: .\build.ps1 -verbose -target AppVeyor -configuration Release -verbosity diagnostic
-
-after_build:
-  - ps: Write-Host "All git branches are $(git branch --all)"
-  - ps: Write-Host "The current GIT branch is $(git rev-parse --abbrev-ref HEAD)"
 
 test: off
 

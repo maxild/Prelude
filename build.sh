@@ -155,7 +155,9 @@ install_tool 'gitreleasemanager.tool' 'dotnet-gitreleasemanager' "$GITRELEASEMAN
 # INSTALL CakeScripts
 ###########################################################################
 
+# NOTE: mono nuget install does not normalize packageid in paths
 if [ ! -d "$TOOLS_DIR/Maxfire.CakeScripts" ]; then
+  echo "Installing version $CAKESCRIPTS_VERSION of Maxfire.CakeScripts..."
   # latest or empty string is interpreted as 'just use the latest' (floating version, not determinsitic)
   if [[ $CAKESCRIPTS_VERSION == "latest" ]] || [[ -z "$CAKESCRIPTS_VERSION" ]]; then
     mono tools/nuget.exe install Maxfire.CakeScripts -ExcludeVersion -Prerelease \
@@ -183,6 +185,10 @@ else
     echo "Upgrading to version $CAKESCRIPTS_VERSION of Maxfire.CakeScripts..."
     mono tools/nuget.exe install Maxfire.CakeScripts -Version "$CAKESCRIPTS_VERSION" -ExcludeVersion -Prerelease \
          -OutputDirectory "$TOOLS_DIR" -Source 'https://nuget.pkg.github.com/maxild/index.json' >/dev/null 2>&1
+    # shellcheck disable=SC2181
+    if [ $? -ne 0 ]; then
+      error_exit "Failed to install Maxfire.CakeScripts"
+    fi
   fi
 fi
 

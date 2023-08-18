@@ -1,11 +1,7 @@
 name: Build
 on:
-  # on push or pull requests to dev branch
+  # on push to all branches
   push:
-    branches:
-      - dev
-  pull_request:
-    branches: [ dev ]
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -26,7 +22,7 @@ jobs:
         os: [windows-latest, ubuntu-latest]
     steps:
       - name: Get the sources (without getting submodules)
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Fetch all history for all tags and branches
         run: git fetch --prune --unshallow
@@ -52,6 +48,11 @@ jobs:
         run: |
           Get-ChildItem env:
         shell: pwsh
+
+      # Using GitHub Packages requires a PAT (GITHUB_TOKEN is automatically created by Github actions)
+      - name: Add source and credentials to Github Packages
+        run: |
+          dotnet nuget add source "https://nuget.pkg.github.com/maxild/index.json" --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github-maxild
 
       - name: Run Cake script on Linux/MacOS
         if: runner.os == 'Linux' || runner.os == 'MacOS'
